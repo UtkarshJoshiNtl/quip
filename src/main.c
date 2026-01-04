@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 char comline[256];
 char *argv[64];
@@ -20,11 +22,16 @@ int main() {
             //tokenize input
             int i = 0;
             char *token = strtok(comline, " \n");
-            while (token != NULL) {
+            while (token != NULL)
+            {
             argv[i++] = token;
             token = strtok(NULL, " \n");
             }
             argv[i] = NULL;
+        if(argv[0] == NULL)
+        {
+            continue;
+        }
             //Built-in commands
             if(strcmp(argv[0], "cd") == 0){
                 if (argv[1] != NULL)
@@ -40,9 +47,18 @@ int main() {
                     continue;
                 }
             }
-            if (strcmp(argv[0], "clear") == 0)
+            if (strcmp(argv[0], "pwd") == 0) 
             {
-                system("clear");
+                char cwd[1024];
+                if (getcwd(cwd, sizeof(cwd)) != NULL) 
+                {
+                    printf("%s\n", cwd);
+                } 
+                else 
+                {
+                    perror("getcwd failed");
+                }
+                continue;
             }
             if (strcmp(argv[0], "exit") == 0) 
             {
@@ -51,6 +67,25 @@ int main() {
             if (strcmp(argv[0], "help") == 0) 
             {
                     printf("Not implemented yet.\n");
+                    continue;
+            }
+            //External commands
+            else {
+                pid_t pid = fork();
+                if (pid < 0) {
+                    perror("Fork has failed");
+                    continue;
+                }
+                if (pid == 0) {
+                    // Child process get here
+                    execvp(argv[0], argv);
+                    perror("Execution has failed");
+                    exit(EXIT_FAILURE);
+                } else {
+                    // Parent process are here
+                    int status;
+                    waitpid(pid, &status, 0);
+                }
             }
     }
     return 0;
