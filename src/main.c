@@ -12,9 +12,66 @@ void Startup(){
 //    system("fastfetch");
 }
 void prompter(){
-    printf("User%-> ");
+    printf("User%%-> ");
     fgets(comline, sizeof(comline), stdin);
 }
+
+typedef int (*builtin_func)(char **argv);
+
+struct builtin {
+    const char *name;
+    builtin_func func;
+};
+
+int builtin_cd(char **argv) {
+    if (argv[1] != NULL) {
+        if (chdir(argv[1]) != 0) {
+            perror("chdir failed");
+        }
+    } else {
+        fprintf(stderr, "cd: missing operand\n");
+    }
+    return 1;
+}
+
+int builtin_pwd(char **argv) {
+    (void)argv;
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("%s\n", cwd);
+    } else {
+        perror("getcwd failed");
+    }
+    return 1;
+}
+
+int builtin_help(char **argv) {
+    (void)argv;
+    printf("Not implemented yet.\n");
+    return 1;
+}
+
+int builtin_exit(char **argv) {
+    (void)argv;
+    return -1; // signal to exit main loop
+}
+
+struct builtin builtins[] = {
+    { "cd", builtin_cd },
+    { "pwd", builtin_pwd },
+    { "help", builtin_help },
+    { "exit", builtin_exit },
+    { NULL, NULL }
+};
+
+builtin_func find_builtin(const char *name) {
+    for (int i = 0; builtins[i].name != NULL; ++i) {
+        if (strcmp(name, builtins[i].name) == 0)
+            return builtins[i].func;
+    }
+    return NULL;
+}
+
 int main() {
     Startup();
     while (1) {
@@ -32,61 +89,35 @@ int main() {
         {
             continue;
         }
-            //Built-in commands
-            if(strcmp(argv[0], "cd") == 0){
-                if (argv[1] != NULL)
-                {
-                    if (chdir(argv[1]) != 0)
-                    {
-                        perror("chdir failed");
-                    }
-                } 
-                else 
-                {
-                    fprintf(stderr, "cd: missing operand\n");
-                    continue;
-                }
-            }
-            if (strcmp(argv[0], "pwd") == 0) 
-            {
-                char cwd[1024];
-                if (getcwd(cwd, sizeof(cwd)) != NULL) 
-                {
-                    printf("%s\n", cwd);
-                } 
-                else 
-                {
-                    perror("getcwd failed");
-                }
-                continue;
-            }
-            if (strcmp(argv[0], "exit") == 0) 
-            {
+
+        // Built-in command dispatch table
+        builtin_func bf = find_builtin(argv[0]);
+        if (bf) {
+            int res = bf(argv);
+            if (res == -1) {
                 break;
             }
-            if (strcmp(argv[0], "help") == 0) 
-            {
-                    printf("Not implemented yet.\n");
-                    continue;
+            continue;
+        }
+
+        // External commands
+        {
+            pid_t pid = fork();
+            if (pid < 0) {
+                perror("Fork has failed");
+                continue;
             }
-            //External commands
-            else {
-                pid_t pid = fork();
-                if (pid < 0) {
-                    perror("Fork has failed");
-                    continue;
-                }
-                if (pid == 0) {
-                    // Child process get here
-                    execvp(argv[0], argv);
-                    perror("Execution has failed");
-                    exit(EXIT_FAILURE);
-                } else {
-                    // Parent process are here
-                    int status;
-                    waitpid(pid, &status, 0);
-                }
+            if (pid == 0) {
+                // Child process get here
+                execvp(argv[0], argv);
+                perror("Execution has failed");
+                exit(EXIT_FAILURE);
+            } else {
+                // Parent process are here
+                int status;
+                waitpid(pid, &status, 0);
             }
+        }
     }
     return 0;
 }
