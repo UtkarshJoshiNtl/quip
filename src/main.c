@@ -55,8 +55,20 @@ void startup() {
     enable_raw_mode();
 }
 
+void print_prompt() {
+    char cwd[1024];
+    char *home = getenv("HOME");
+    if (getcwd(cwd, sizeof(cwd)) == NULL) strcpy(cwd, "???");
+
+    if (home != NULL && strncmp(cwd, home, strlen(home)) == 0) {
+        printf("[\033[1;32mquip\033[0m:\033[1;34m~%s\033[0m]$ ", cwd + strlen(home));
+    } else {
+        printf("[\033[1;32mquip\033[0m:\033[1;34m%s\033[0m]$ ", cwd);
+    }
+}
+
 void prompter() {
-    printf("User%%-> ");
+    print_prompt();
     fflush(stdout);
 
     int    pos      = 0;
@@ -86,10 +98,11 @@ void prompter() {
                 buf[len] = '\0';
                 
                 write(STDOUT_FILENO, "\r", 1);
-                printf("User%%-> %.*s", len, buf);
-                printf(" ");
+                print_prompt();
+                printf("%.*s ", len, buf);
                 printf("\r");
-                printf("User%%-> %.*s", pos, buf);
+                print_prompt();
+                printf("%.*s", pos, buf);
                 fflush(stdout);
             }
             continue;
@@ -114,7 +127,8 @@ void prompter() {
                     len = pos = strlen(buf);
 
                     printf("\r\033[2K");
-                    printf("User%%-> %s", buf);
+                    print_prompt();
+                    printf("%s", buf);
                     fflush(stdout);
 
                 } else if (seq[1] == 'C' && pos < len) {  
