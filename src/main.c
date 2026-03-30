@@ -230,6 +230,15 @@ int builtin_echo(char **argv) {
     return 1;
 }
 
+int builtin_env(char **argv) {
+    (void)argv;
+    extern char **environ;
+    for (char **env = environ; *env; env++) {
+        printf("%s\n", *env);
+    }
+    return 1;
+}
+
 struct builtin builtins[] = {
     { "cd",      builtin_cd      },
     { "pwd",     builtin_pwd     },
@@ -237,6 +246,7 @@ struct builtin builtins[] = {
     { "history", builtin_history },
     { "clear",   builtin_clear   },
     { "echo",    builtin_echo    },
+    { "env",     builtin_env     },
     { "exit",    builtin_exit    },
     { NULL,      NULL            }
 };
