@@ -201,11 +201,19 @@ int builtin_exit(char **argv) {
     return -1;
 }
 
+int builtin_clear(char **argv) {
+    (void)argv;
+    printf("\033[H\033[J");
+    fflush(stdout);
+    return 1;
+}
+
 struct builtin builtins[] = {
     { "cd",      builtin_cd      },
     { "pwd",     builtin_pwd     },
     { "help",    builtin_help    },
     { "history", builtin_history },
+    { "clear",   builtin_clear   },
     { "exit",    builtin_exit    },
     { NULL,      NULL            }
 };
