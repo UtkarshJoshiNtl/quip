@@ -222,12 +222,21 @@ int builtin_clear(char **argv) {
     return 1;
 }
 
+int builtin_echo(char **argv) {
+    for (int i = 1; argv[i] != NULL; i++) {
+        printf("%s%s", argv[i], argv[i+1] ? " " : "");
+    }
+    printf("\n");
+    return 1;
+}
+
 struct builtin builtins[] = {
     { "cd",      builtin_cd      },
     { "pwd",     builtin_pwd     },
     { "help",    builtin_help    },
     { "history", builtin_history },
     { "clear",   builtin_clear   },
+    { "echo",    builtin_echo    },
     { "exit",    builtin_exit    },
     { NULL,      NULL            }
 };
