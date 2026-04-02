@@ -23,6 +23,16 @@ void print_prompt(void) {
 }
 
 int read_line(char *buffer, size_t size) {
+    if (!isatty(STDIN_FILENO)) {
+        if (fgets(buffer, size, stdin)) {
+            buffer[strcspn(buffer, "\n")] = '\0';
+            if (buffer[0] != '\0')
+                history_push(buffer);
+            return strlen(buffer);
+        }
+        return -1;
+    }
+
     print_prompt();
     fflush(stdout);
 

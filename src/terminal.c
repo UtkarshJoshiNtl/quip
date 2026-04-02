@@ -3,6 +3,10 @@
 static struct termios orig_termios;
 
 void terminal_init(void) {
+    if (!isatty(STDIN_FILENO)) {
+        return;
+    }
+    
     if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) {
         perror("tcgetattr failed");
         return;
@@ -21,6 +25,9 @@ void terminal_init(void) {
 }
 
 void terminal_cleanup(void) {
+    if (!isatty(STDIN_FILENO)) {
+        return;
+    }
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) {
         perror("tcsetattr cleanup failed");
     }
