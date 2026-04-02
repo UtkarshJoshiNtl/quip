@@ -91,7 +91,16 @@ void handle_redirection(char **argv) {
 void execute_command(char *cmd) {
     if (!cmd || !*cmd) return;
     
-    int argc = parse_command_line(cmd, args);
+    int is_background = is_background_command(cmd);
+    char cmd_copy[MAX_LINE];
+    strncpy(cmd_copy, cmd, MAX_LINE - 1);
+    cmd_copy[MAX_LINE - 1] = '\0';
+    
+    if (is_background) {
+        strip_background_ampersand(cmd_copy);
+    }
+    
+    int argc = parse_command_line(cmd_copy, args);
     if (argc == 0 || args[0] == NULL) return;
 
     builtin_func bf = find_builtin(args[0]);
@@ -110,14 +119,23 @@ void execute_command(char *cmd) {
     }
     
     if (pid == 0) {
+        signal(SIGINT, SIG_DFL);
+        signal(SIGTERM, SIG_DFL);
+        signal(SIGCHLD, SIG_DFL);
+        
         handle_redirection(args);
         execvp(args[0], args);
         perror("exec failed");
         exit(EXIT_FAILURE);
     } else {
-        int status;
-        if (waitpid(pid, &status, 0) == -1) {
-            perror("waitpid failed");
+        if (is_background) {
+            int job_id = add_job(pid, cmd_copy);
+            printf("[%d] %d\n", job_id + 1, pid);
+        } else {
+            int status;
+            if (waitpid(pid, &status, 0) == -1) {
+                perror("waitpid failed");
+            }
         }
     }
 }

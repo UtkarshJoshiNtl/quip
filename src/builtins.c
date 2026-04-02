@@ -92,6 +92,9 @@ struct builtin builtins[] = {
     { "clear",   builtin_clear   },
     { "echo",    builtin_echo    },
     { "env",     builtin_env     },
+    { "jobs",    builtin_jobs    },
+    { "fg",      builtin_fg      },
+    { "bg",      builtin_bg      },
     { "exit",    builtin_exit    },
     { NULL,      NULL            }
 };

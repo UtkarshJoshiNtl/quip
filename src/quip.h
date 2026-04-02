@@ -54,6 +54,22 @@ int builtin_clear(char **argv);
 int builtin_echo(char **argv);
 int builtin_env(char **argv);
 
+// Job control
+void jobs_init(void);
+void cleanup_jobs(void);
+int add_job(pid_t pid, const char *command);
+void remove_job(int job_id);
+int builtin_jobs(char **argv);
+int builtin_fg(char **argv);
+int builtin_bg(char **argv);
+int is_background_command(const char *cmd);
+char *strip_background_ampersand(char *cmd);
+
+// Signal handling
+void signals_init(void);
+void signals_cleanup(void);
+int should_exit_shell(void);
+
 // Utility functions
 char *get_command_line(void);
 void handle_redirection(char **argv);
