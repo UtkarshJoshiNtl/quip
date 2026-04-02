@@ -1,0 +1,131 @@
+#include "quip.h"
+#include <dirent.h>
+
+extern void print_prompt(void);
+
+static const char *builtin_commands[] = {
+    "cd", "pwd", "help", "history", "clear", "echo", "env", 
+    "jobs", "fg", "bg", "exit", NULL
+};
+
+static int count_matches(const char *prefix, char **matches) {
+    int count = 0;
+    
+    for (int i = 0; builtin_commands[i]; i++) {
+        if (strncmp(builtin_commands[i], prefix, strlen(prefix)) == 0) {
+            if (matches) {
+                matches[count] = (char *)builtin_commands[i];
+            }
+            count++;
+        }
+    }
+    
+    DIR *dir = opendir(".");
+    if (dir) {
+        struct dirent *entry;
+        while ((entry = readdir(dir)) != NULL) {
+            if (strncmp(entry->d_name, prefix, strlen(prefix)) == 0) {
+                if (matches && count < MAX_ARGS) {
+                    matches[count] = entry->d_name;
+                }
+                count++;
+            }
+        }
+        closedir(dir);
+    }
+    
+    return count;
+}
+
+static char *find_longest_common_prefix(char **matches, int count) {
+    if (count == 0) return NULL;
+    if (count == 1) return matches[0];
+    
+    size_t min_len = strlen(matches[0]);
+    for (int i = 1; i < count; i++) {
+        size_t len = strlen(matches[i]);
+        if (len < min_len) min_len = len;
+    }
+    
+    static char prefix[MAX_LINE];
+    size_t prefix_len = 0;
+    
+    for (size_t i = 0; i < min_len; i++) {
+        char c = matches[0][i];
+        int all_match = 1;
+        
+        for (int j = 1; j < count; j++) {
+            if (matches[j][i] != c) {
+                all_match = 0;
+                break;
+            }
+        }
+        
+        if (all_match) {
+            prefix[prefix_len++] = c;
+        } else {
+            break;
+        }
+    }
+    
+    prefix[prefix_len] = '\0';
+    return prefix;
+}
+
+void handle_completion(char *buf, int *pos, int *len) {
+    if (*pos == 0) return;
+    
+    char prefix[MAX_LINE];
+    strncpy(prefix, buf, *pos);
+    prefix[*pos] = '\0';
+    
+    char *matches[MAX_ARGS];
+    int match_count = count_matches(prefix, matches);
+    
+    if (match_count == 0) {
+        return;
+    } else if (match_count == 1) {
+        size_t match_len = strlen(matches[0]);
+        size_t prefix_len = strlen(prefix);
+        
+        if (match_len > prefix_len) {
+            for (size_t i = prefix_len; i < match_len && *len < MAX_LINE - 1; i++) {
+                memmove(buf + *pos + 1, buf + *pos, *len - *pos);
+                buf[*pos] = matches[0][i];
+                (*pos)++;
+                (*len)++;
+                buf[*len] = '\0';
+            }
+            
+            write(STDOUT_FILENO, buf + *pos - (match_len - prefix_len), 
+                  match_len - prefix_len);
+        }
+    } else {
+        char *common_prefix = find_longest_common_prefix(matches, match_count);
+        if (common_prefix && strlen(common_prefix) > strlen(prefix)) {
+            size_t common_len = strlen(common_prefix);
+            size_t prefix_len = strlen(prefix);
+            
+            for (size_t i = prefix_len; i < common_len && *len < MAX_LINE - 1; i++) {
+                memmove(buf + *pos + 1, buf + *pos, *len - *pos);
+                buf[*pos] = common_prefix[i];
+                (*pos)++;
+                (*len)++;
+                buf[*len] = '\0';
+            }
+            
+            write(STDOUT_FILENO, buf + *pos - (common_len - prefix_len), 
+                  common_len - prefix_len);
+        } else {
+            write(STDOUT_FILENO, "\n", 1);
+            for (int i = 0; i < match_count; i++) {
+                printf("  %s\n", matches[i]);
+            }
+            
+            write(STDOUT_FILENO, "\r", 1);
+            print_prompt();
+            printf("%s", buf);
+            fflush(stdout);
+        }
+    }
+}

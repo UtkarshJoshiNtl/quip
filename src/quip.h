@@ -65,6 +65,9 @@ int builtin_bg(char **argv);
 int is_background_command(const char *cmd);
 char *strip_background_ampersand(char *cmd);
 
+// Command completion
+void handle_completion(char *buf, int *pos, int *len);
+
 // Signal handling
 void signals_init(void);
 void signals_cleanup(void);

@@ -128,6 +128,8 @@ int read_line(char *buffer, size_t size) {
                     fflush(stdout);
                 }
             }
+        } else if (c == '\t') {
+            handle_completion(buf, &pos, &len);
         }
     }
 

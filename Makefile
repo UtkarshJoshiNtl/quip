@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -std=c99
-SRC = src/main.c src/history.c src/terminal.c src/prompt.c src/builtins.c src/execute.c src/signals.c src/jobs.c
+SRC = src/main.c src/history.c src/terminal.c src/prompt.c src/builtins.c src/execute.c src/signals.c src/jobs.c src/completion.c
 OBJ = main.o history.o terminal.o prompt.o builtins.o execute.o
 TARGET = quip
 
@@ -16,6 +16,9 @@ clean:
 	rm -f $(TARGET) $(OBJ)
 
 test: $(TARGET)
-	./quip -c "help"
+	./test.sh
 
-.PHONY: all clean debug test
+install: $(TARGET)
+	cp $(TARGET) /usr/local/bin/
+
+.PHONY: all clean debug test install
