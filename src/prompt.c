@@ -27,8 +27,10 @@ void print_prompt(void) {
     if (!username) username = "user";
 
     char pretty[1024];
-    if (home && strncmp(cwd, home, strlen(home)) == 0)
-        snprintf(pretty, sizeof(pretty), "~%s", cwd + strlen(home));
+    size_t home_len = home ? strlen(home) : 0;
+    if (home && home_len > 0 && strncmp(cwd, home, home_len) == 0 &&
+        (cwd[home_len] == '/' || cwd[home_len] == '\0'))
+        snprintf(pretty, sizeof(pretty), "~%s", cwd + home_len);
     else
         snprintf(pretty, sizeof(pretty), "%s", cwd);
 
