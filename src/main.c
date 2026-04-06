@@ -12,6 +12,11 @@ int main() {
     while (!should_exit_shell()) {
         cleanup_jobs();
         char *cmd_line = get_command_line();
+        if (was_sigint_received()) {
+            print_prompt();
+            fflush(stdout);
+            continue;
+        }
         if (read_line(cmd_line, MAX_LINE) >= 0) {
             execute_line(cmd_line);
         }

@@ -2,12 +2,14 @@
 #include <signal.h>
 
 static volatile sig_atomic_t should_exit = 0;
+static volatile sig_atomic_t sigint_received = 0;
 
 void signal_handler(int sig) {
     switch (sig) {
         case SIGINT:
-            write(STDOUT_FILENO, "\n", 1);
-            should_exit = 1;
+            write(STDOUT_FILENO, "^C\n", 3);
+            should_exit = 0;
+            sigint_received = 1;
             break;
         case SIGTERM:
             should_exit = 1;
@@ -49,4 +51,12 @@ void signals_cleanup(void) {
 
 int should_exit_shell(void) {
     return should_exit;
+}
+
+int was_sigint_received(void) {
+    if (sigint_received) {
+        sigint_received = 0;
+        return 1;
+    }
+    return 0;
 }

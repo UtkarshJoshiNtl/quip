@@ -72,6 +72,7 @@ void handle_completion(char *buf, int *pos, int *len);
 void signals_init(void);
 void signals_cleanup(void);
 int should_exit_shell(void);
+int was_sigint_received(void);
 
 // Utility functions
 char *get_command_line(void);
