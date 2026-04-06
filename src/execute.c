@@ -1,7 +1,5 @@
 #include "quip.h"
 
-static char *args[MAX_ARGS];
-
 int parse_command_line(char *line, char **argv) {
     if (!line || !argv) return 0;
     
@@ -90,6 +88,8 @@ void handle_redirection(char **argv) {
 
 void execute_command(char *cmd) {
     if (!cmd || !*cmd) return;
+    
+    static char *args[MAX_ARGS];
     
     int is_background = is_background_command(cmd);
     char cmd_copy[MAX_LINE];
