@@ -11,7 +11,7 @@
 #include <fcntl.h>
 #include <termios.h>
 
-#define MAX_LINE    256
+#define MAX_LINE    4096
 #define MAX_ARGS     64
 #define MAX_HISTORY  64
 
