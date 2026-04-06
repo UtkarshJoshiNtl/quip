@@ -43,6 +43,8 @@ int parse_command_line(char *line, char **argv);
 void execute_command(char *cmd);
 void execute_line(char *line);
 builtin_func find_builtin(const char *name);
+int parse_pipeline(char *line, char **commands);
+void execute_pipeline(char **commands);
 
 // Built-in commands
 int builtin_cd(char **argv);

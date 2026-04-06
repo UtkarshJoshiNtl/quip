@@ -149,11 +149,144 @@ void execute_line(char *line) {
         return;
     }
     
-    char *cmd = strtok(line_copy, ";");
-    while (cmd != NULL) {
-        execute_command(cmd);
-        cmd = strtok(NULL, ";");
+    // Check if this is a pipeline
+    if (strchr(line_copy, '|')) {
+        char *commands[MAX_ARGS];
+        int cmd_count = parse_pipeline(line_copy, commands);
+        if (cmd_count > 1) {
+            execute_pipeline(commands);
+        } else {
+            execute_command(commands[0]);
+        }
+        
+        // Free pipeline commands
+        for (int i = 0; i < cmd_count; i++) {
+            free(commands[i]);
+        }
+    } else {
+        char *cmd = strtok(line_copy, ";");
+        while (cmd != NULL) {
+            execute_command(cmd);
+            cmd = strtok(NULL, ";");
+        }
     }
     
     free(line_copy);
+}
+
+int parse_pipeline(char *line, char **commands) {
+    if (!line || !commands) return 0;
+    
+    int count = 0;
+    char *token = strtok(line, "|");
+    
+    while (token != NULL && count < MAX_ARGS - 1) {
+        // Skip leading whitespace
+        while (*token == ' ' || *token == '\t') token++;
+        
+        // Remove trailing whitespace
+        char *end = token + strlen(token) - 1;
+        while (end > token && (*end == ' ' || *end == '\t')) end--;
+        *(end + 1) = '\0';
+        
+        commands[count] = strdup(token);
+        count++;
+        token = strtok(NULL, "|");
+    }
+    
+    commands[count] = NULL;
+    return count;
+}
+
+void execute_pipeline(char **commands) {
+    if (!commands || !commands[0]) return;
+    
+    int num_commands = 0;
+    while (commands[num_commands]) num_commands++;
+    
+    if (num_commands <= 1) {
+        execute_command(commands[0]);
+        return;
+    }
+    
+    int pipefd[2];
+    pid_t pid;
+    int in_fd = STDIN_FILENO;
+    
+    for (int i = 0; i < num_commands; i++) {
+        if (i < num_commands - 1) {
+            // Create pipe for all but the last command
+            if (pipe(pipefd) == -1) {
+                perror("pipe failed");
+                return;
+            }
+        }
+        
+        pid = fork();
+        if (pid < 0) {
+            perror("fork failed");
+            return;
+        }
+        
+        if (pid == 0) {
+            // Child process
+            signal(SIGINT, SIG_DFL);
+            signal(SIGTERM, SIG_DFL);
+            signal(SIGCHLD, SIG_DFL);
+            
+            // Set up input
+            if (i > 0) {
+                dup2(in_fd, STDIN_FILENO);
+                close(in_fd);
+            }
+            
+            // Set up output
+            if (i < num_commands - 1) {
+                dup2(pipefd[1], STDOUT_FILENO);
+                close(pipefd[0]);
+                close(pipefd[1]);
+            }
+            
+            // Parse and execute command
+            static char *cmd_args[MAX_ARGS];
+            int argc = parse_command_line(commands[i], cmd_args);
+            
+            if (argc == 0 || cmd_args[0] == NULL) {
+                exit(EXIT_FAILURE);
+            }
+            
+            // Check if it's a builtin
+            builtin_func bf = find_builtin(cmd_args[0]);
+            if (bf) {
+                int result = bf(cmd_args);
+                exit(result == 1 ? 0 : 1);
+            }
+            
+            // Execute external command
+            handle_redirection(cmd_args);
+            execvp(cmd_args[0], cmd_args);
+            perror("exec failed");
+            exit(EXIT_FAILURE);
+        } else {
+            // Parent process
+            if (i > 0) {
+                close(in_fd);
+            }
+            
+            if (i < num_commands - 1) {
+                close(pipefd[1]);
+                in_fd = pipefd[0];
+            }
+        }
+    }
+    
+    // Wait for all processes in the pipeline
+    int status;
+    for (int i = 0; i < num_commands; i++) {
+        wait(&status);
+    }
+    
+    if (num_commands > 1) {
+        close(in_fd);
+    }
 }
