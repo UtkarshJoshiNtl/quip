@@ -11,6 +11,7 @@ static const char *builtin_commands[] = {
 static int count_matches(const char *prefix, char **matches) {
     int count = 0;
     
+    // First count builtin commands
     for (int i = 0; builtin_commands[i]; i++) {
         if (strncmp(builtin_commands[i], prefix, strlen(prefix)) == 0) {
             if (matches) {
@@ -20,13 +21,14 @@ static int count_matches(const char *prefix, char **matches) {
         }
     }
     
+    // Then count directory entries
     DIR *dir = opendir(".");
     if (dir) {
         struct dirent *entry;
         while ((entry = readdir(dir)) != NULL) {
             if (strncmp(entry->d_name, prefix, strlen(prefix)) == 0) {
                 if (matches && count < MAX_ARGS) {
-                    matches[count] = entry->d_name;
+                    matches[count] = strdup(entry->d_name);
                 }
                 count++;
             }
@@ -127,5 +129,17 @@ void handle_completion(char *buf, int *pos, int *len) {
             printf("%s", buf);
             fflush(stdout);
         }
+    }
+    
+    // Free strdup'd memory for directory entries (skip builtin commands)
+    int builtin_count = 0;
+    for (int i = 0; builtin_commands[i]; i++) {
+        if (strncmp(builtin_commands[i], prefix, strlen(prefix)) == 0) {
+            builtin_count++;
+        }
+    }
+    
+    for (int i = builtin_count; i < match_count; i++) {
+        free(matches[i]);
     }
 }
