@@ -60,17 +60,19 @@ int builtin_jobs(char **argv) {
     cleanup_jobs();
     
     if (job_count == 0) {
-        printf("No active jobs.\n");
+        printf("\033[38;5;240m│ No active jobs.\033[0m\n");
         return 1;
     }
     
+    printf("\033[38;5;46m╭─ Active Jobs ─────────────────────────────╮\033[0m\n");
     for (int i = 0; i < job_count; i++) {
-        printf("[%d] %d %s %s\n", 
+        printf("\033[38;5;46m│\033[38;5;220m [%d]\033[38;5;255m PID:\033[38;5;196m %d\033[38;5;255m Status:\033[38;5;46m %s\033[38;5;255m Command:\033[38;5;220m %s\033[38;5;46m │\033[0m\n", 
                i + 1, 
                jobs[i].pid, 
-               jobs[i].status ? "Running" : "Stopped",
+               jobs[i].status ? "\033[38;5;46mRunning\033[0m" : "\033[38;5;196mStopped\033[0m",
                jobs[i].command);
     }
+    printf("\033[38;5;46m╰─────────────────────────────────────────────╯\033[0m\n");
     
     return 1;
 }

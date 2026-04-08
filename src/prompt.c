@@ -9,17 +9,32 @@ char *get_command_line(void) {
 void print_prompt(void) {
     char cwd[1024];
     char *home = getenv("HOME");
+    char hostname[256];
     
     if (getcwd(cwd, sizeof(cwd)) == NULL) {
         strncpy(cwd, "???", sizeof(cwd) - 1);
         cwd[sizeof(cwd) - 1] = '\0';
     }
-
-    if (home != NULL && strncmp(cwd, home, strlen(home)) == 0) {
-        printf("[\033[1;32mquip\033[0m:\033[1;34m~%s\033[0m]$ ", cwd + strlen(home));
-    } else {
-        printf("[\033[1;32mquip\033[0m:\033[1;34m%s\033[0m]$ ", cwd);
+    
+    if (gethostname(hostname, sizeof(hostname)) == -1) {
+        strncpy(hostname, "localhost", sizeof(hostname) - 1);
+        hostname[sizeof(hostname) - 1] = '\0';
     }
+    
+    // Get username
+    char *username = getenv("USER");
+    if (!username) username = "user";
+    
+    // Modern prompt: [user@hostname] path $
+    printf("\033[38;5;141m┌──[\033[38;5;220m%s\033[38;5;255m@\033[38;5;196m%s\033[38;5;141m]\033[0m\n", username, hostname);
+    
+    if (home != NULL && strncmp(cwd, home, strlen(home)) == 0) {
+        printf("\033[38;5;141m├──[\033[38;5;51m~%s\033[38;5;141m]\033[0m\n", cwd + strlen(home));
+    } else {
+        printf("\033[38;5;141m├──[\033[38;5;51m%s\033[38;5;141m]\033[0m\n", cwd);
+    }
+    
+    printf("\033[38;5;141m└─╼\033[38;5;46m➤\033[0m ");
 }
 
 int read_line(char *buffer, size_t size) {

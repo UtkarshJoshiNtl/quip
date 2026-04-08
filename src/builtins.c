@@ -35,12 +35,28 @@ int builtin_pwd(char **argv) {
 
 int builtin_help(char **argv) {
     (void)argv;
-    printf("quip shell - version 0.2\n");
-    printf("Available builtins:\n");
-    extern struct builtin builtins[];
-    for (int i = 0; builtins[i].name != NULL; i++) {
-        printf("  %s\n", builtins[i].name);
-    }
+    printf("\033[38;5;46m╭─────────────────────────────────────────────────────╮\033[0m\n");
+    printf("\033[38;5;46m│\033[38;5;220m              Quip Shell v0.3 - Help              \033[38;5;46m│\033[0m\n");
+    printf("\033[38;5;46m╰─────────────────────────────────────────────────────╯\033[0m\n");
+    printf("\033[38;5;255m🔧 \033[38;5;220mBuilt-in Commands:\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m cd [dir]      \033[38;5;255m- Change directory\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m pwd           \033[38;5;255m- Print working directory\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m help          \033[38;5;255m- Show this help message\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m history       \033[38;5;255m- Show command history\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m clear         \033[38;5;255m- Clear the screen\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m echo [text]   \033[38;5;255m- Print text to stdout\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m env           \033[38;5;255m- List environment variables\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m jobs          \033[38;5;255m- List background jobs\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m fg [job_id]   \033[38;5;255m- Bring job to foreground\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;51m bg [job_id]   \033[38;5;255m- Resume job in background\033[0m\n");
+    printf("\033[38;5;240m└─\033[38;5;51m exit          \033[38;5;255m- Exit the shell\033[0m\n");
+    printf("\n\033[38;5;255m✨ \033[38;5;220mSpecial Features:\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;46m Pipes         \033[38;5;255m- Use | to pipe commands\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;46m Redirection   \033[38;5;255m- Use >, >>, < for I/O redirection\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;46m Background    \033[38;5;255m- Use & to run commands in background\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;46m History       \033[38;5;255m- Use ↑/↓ arrows to navigate history\033[0m\n");
+    printf("\033[38;5;240m├─\033[38;5;46m Auto-complete \033[38;5;255m- Use TAB to complete commands/files\033[0m\n");
+    printf("\033[38;5;240m└─\033[38;5;46m Ctrl+C        \033[38;5;255m- Cancel current command\033[0m\n");
     return 1;
 }
 
