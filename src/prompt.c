@@ -70,7 +70,7 @@ int read_line(char *buffer, size_t size) {
         char c;
         ssize_t result = read(STDIN_FILENO, &c, 1);
         if (result <= 0) {
-            if (len == 0) return -1;
+            if (len == 0) return (result == 0) ? -2 : -1;
             break;
         }
 

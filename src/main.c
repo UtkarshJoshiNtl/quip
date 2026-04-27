@@ -24,6 +24,7 @@ int main(void) {
             continue;
         }
         int ret = read_line(cmd_line, MAX_LINE);
+        if (ret == -2) break;
         if (ret < 0) {
             if (!isatty(STDIN_FILENO)) {
                 break;
