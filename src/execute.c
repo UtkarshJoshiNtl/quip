@@ -12,7 +12,8 @@ int parse_command_line(char *line, char **argv) {
             p++;
             argv[argc++] = p;
             while (*p && *p != '"') {
-                if (*p == '\\' && *(p+1)) p++;
+                if (*p == '\\' && *(p+1))
+                    memmove(p, p+1, strlen(p));
                 p++;
             }
             if (*p) *p++ = '\0';
