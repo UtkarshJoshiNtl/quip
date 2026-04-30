@@ -21,9 +21,11 @@ int parse_command_line(char *line, char **argv) {
         } else {
             argv[argc++] = p;
             while (*p && *p != ' ' && *p != '\n') {
-                if (*p == '\\' && *(p+1))
+                if (*p == '\\' && *(p+1)) {
                     memmove(p, p+1, strlen(p));
-                p++;
+                } else {
+                    p++;
+                }
             }
             if (*p) *p++ = '\0';
         }
@@ -210,6 +212,7 @@ void execute_pipeline(char **commands) {
     }
     
     int pipefd[2];
+    pid_t pids[MAX_ARGS];
     pid_t pid;
     int in_fd = STDIN_FILENO;
     
@@ -227,6 +230,8 @@ void execute_pipeline(char **commands) {
             perror("fork failed");
             return;
         }
+        
+        pids[i] = pid;
         
         if (pid == 0) {
             // Child process
@@ -280,10 +285,12 @@ void execute_pipeline(char **commands) {
         }
     }
     
-    // Wait for all processes in the pipeline
+    // Wait for all processes in the pipeline using specific PIDs
     int status;
     for (int i = 0; i < num_commands; i++) {
-        wait(&status);
+        if (waitpid(pids[i], &status, 0) == -1) {
+            perror("waitpid failed");
+        }
     }
     
     if (num_commands > 1) {

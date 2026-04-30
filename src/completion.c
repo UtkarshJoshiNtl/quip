@@ -102,6 +102,18 @@ void handle_completion(char *buf, int *pos, int *len) {
             write(STDOUT_FILENO, buf + *pos - (match_len - prefix_len), 
                   match_len - prefix_len);
         }
+        
+        // Free strdup'd memory for directory entries (skip builtin commands)
+        int builtin_count = 0;
+        for (int i = 0; builtin_commands[i]; i++) {
+            if (strncmp(builtin_commands[i], prefix, strlen(prefix)) == 0) {
+                builtin_count++;
+            }
+        }
+        
+        for (int i = builtin_count; i < match_count; i++) {
+            free(matches[i]);
+        }
     } else {
         char *common_prefix = find_longest_common_prefix(matches, match_count);
         if (common_prefix && strlen(common_prefix) > strlen(prefix)) {
@@ -129,17 +141,17 @@ void handle_completion(char *buf, int *pos, int *len) {
             printf("%s", buf);
             fflush(stdout);
         }
-    }
-    
-    // Free strdup'd memory for directory entries (skip builtin commands)
-    int builtin_count = 0;
-    for (int i = 0; builtin_commands[i]; i++) {
-        if (strncmp(builtin_commands[i], prefix, strlen(prefix)) == 0) {
-            builtin_count++;
+        
+        // Free strdup'd memory for directory entries (skip builtin commands)
+        int builtin_count = 0;
+        for (int i = 0; builtin_commands[i]; i++) {
+            if (strncmp(builtin_commands[i], prefix, strlen(prefix)) == 0) {
+                builtin_count++;
+            }
         }
-    }
-    
-    for (int i = builtin_count; i < match_count; i++) {
-        free(matches[i]);
+        
+        for (int i = builtin_count; i < match_count; i++) {
+            free(matches[i]);
+        }
     }
 }

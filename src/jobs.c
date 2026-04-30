@@ -167,13 +167,33 @@ char *strip_background_ampersand(char *cmd) {
     size_t len = strlen(cmd);
     if (len == 0) return cmd;
     
-    if (cmd[len - 1] == '&') {
-        cmd[len - 1] = '\0';
+    // Check if the last character is '&' and it's not inside quotes
+    int in_quotes = 0;
+    int in_double_quotes = 0;
+    
+    for (size_t i = 0; i < len; i++) {
+        if (cmd[i] == '\'' && !in_double_quotes) {
+            in_quotes = !in_quotes;
+        } else if (cmd[i] == '"' && !in_quotes) {
+            in_double_quotes = !in_double_quotes;
+        }
+    }
+    
+    // Only strip '&' if we're not inside quotes
+    if (!in_quotes && !in_double_quotes) {
+        size_t pos = len - 1;
+        while (pos > 0 && (cmd[pos] == ' ' || cmd[pos] == '\t')) {
+            pos--;
+        }
         
-        len--;
-        while (len > 0 && (cmd[len - 1] == ' ' || cmd[len - 1] == '\t')) {
-            cmd[len - 1] = '\0';
-            len--;
+        if (cmd[pos] == '&') {
+            cmd[pos] = '\0';
+            
+            // Also strip trailing whitespace after removing '&'
+            while (pos > 0 && (cmd[pos - 1] == ' ' || cmd[pos - 1] == '\t')) {
+                cmd[pos - 1] = '\0';
+                pos--;
+            }
         }
     }
     
