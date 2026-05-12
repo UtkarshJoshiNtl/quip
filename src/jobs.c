@@ -131,17 +131,12 @@ int builtin_bg(char **argv) {
     return 1;
 }
 
-int is_background_command(const char *cmd) {
-    if (!cmd) return 0;
-    
-    size_t len = strlen(cmd);
-    if (len == 0) return 0;
-    
-    // Check if the last character is '&' and it's not inside quotes
+// Helper function to check if a position is inside quotes
+static int is_inside_quotes(const char *cmd, size_t pos) {
     int in_quotes = 0;
     int in_double_quotes = 0;
     
-    for (size_t i = 0; i < len; i++) {
+    for (size_t i = 0; i < pos; i++) {
         if (cmd[i] == '\'' && !in_double_quotes) {
             in_quotes = !in_quotes;
         } else if (cmd[i] == '"' && !in_quotes) {
@@ -149,16 +144,22 @@ int is_background_command(const char *cmd) {
         }
     }
     
-    // If we're not inside quotes, check if the last non-whitespace char is '&'
-    if (!in_quotes && !in_double_quotes) {
-        size_t pos = len - 1;
-        while (pos > 0 && (cmd[pos] == ' ' || cmd[pos] == '\t')) {
-            pos--;
-        }
-        return cmd[pos] == '&';
+    return in_quotes || in_double_quotes;
+}
+
+int is_background_command(const char *cmd) {
+    if (!cmd) return 0;
+    
+    size_t len = strlen(cmd);
+    if (len == 0) return 0;
+    
+    // Check if the last non-whitespace char is '&' and it's not inside quotes
+    size_t pos = len - 1;
+    while (pos > 0 && (cmd[pos] == ' ' || cmd[pos] == '\t')) {
+        pos--;
     }
     
-    return 0;
+    return !is_inside_quotes(cmd, pos) && cmd[pos] == '&';
 }
 
 char *strip_background_ampersand(char *cmd) {
@@ -167,33 +168,20 @@ char *strip_background_ampersand(char *cmd) {
     size_t len = strlen(cmd);
     if (len == 0) return cmd;
     
-    // Check if the last character is '&' and it's not inside quotes
-    int in_quotes = 0;
-    int in_double_quotes = 0;
-    
-    for (size_t i = 0; i < len; i++) {
-        if (cmd[i] == '\'' && !in_double_quotes) {
-            in_quotes = !in_quotes;
-        } else if (cmd[i] == '"' && !in_quotes) {
-            in_double_quotes = !in_double_quotes;
-        }
+    // Find the last non-whitespace character
+    size_t pos = len - 1;
+    while (pos > 0 && (cmd[pos] == ' ' || cmd[pos] == '\t')) {
+        pos--;
     }
     
     // Only strip '&' if we're not inside quotes
-    if (!in_quotes && !in_double_quotes) {
-        size_t pos = len - 1;
-        while (pos > 0 && (cmd[pos] == ' ' || cmd[pos] == '\t')) {
-            pos--;
-        }
+    if (!is_inside_quotes(cmd, pos) && cmd[pos] == '&') {
+        cmd[pos] = '\0';
         
-        if (cmd[pos] == '&') {
-            cmd[pos] = '\0';
-            
-            // Also strip trailing whitespace after removing '&'
-            while (pos > 0 && (cmd[pos - 1] == ' ' || cmd[pos - 1] == '\t')) {
-                cmd[pos - 1] = '\0';
-                pos--;
-            }
+        // Also strip trailing whitespace after removing '&'
+        while (pos > 0 && (cmd[pos - 1] == ' ' || cmd[pos - 1] == '\t')) {
+            cmd[pos - 1] = '\0';
+            pos--;
         }
     }
     

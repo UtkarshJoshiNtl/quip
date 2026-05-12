@@ -29,6 +29,10 @@ static int count_matches(const char *prefix, char **matches) {
             if (strncmp(entry->d_name, prefix, strlen(prefix)) == 0) {
                 if (matches && count < MAX_ARGS) {
                     matches[count] = strdup(entry->d_name);
+                    if (matches[count] == NULL) {
+                        closedir(dir);
+                        return count; // Return count without incrementing on strdup failure
+                    }
                 }
                 count++;
             }
