@@ -1,2 +1,4 @@
 quip
 *.o
+__pycache__/
+*.pyc

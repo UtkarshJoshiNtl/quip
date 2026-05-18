@@ -2,43 +2,58 @@
 
 extern void print_prompt(void);
 
-int main() {
-    printf("\033[38;5;46m╭─────────────────────────────────────────────────────╮\033[0m\n");
-    printf("\033[38;5;46m│\033[38;5;220m  ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ \033[38;5;46m│\033[0m\n");
-    printf("\033[38;5;46m│\033[38;5;220m  ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║ \033[38;5;46m│\033[0m\n");
-    printf("\033[38;5;46m│\033[38;5;220m     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║ \033[38;5;46m│\033[0m\n");
-    printf("\033[38;5;46m│\033[38;5;220m     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║ \033[38;5;46m│\033[0m\n");
-    printf("\033[38;5;46m│\033[38;5;220m     ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║ \033[38;5;46m│\033[0m\n");
-    printf("\033[38;5;46m│\033[38;5;220m     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝ \033[38;5;46m│\033[0m\n");
-    printf("\033[38;5;46m│\033[38;5;51m                 Enhanced Shell v0.3              \033[38;5;46m│\033[0m\n");
-    printf("\033[38;5;46m╰─────────────────────────────────────────────────────╯\033[0m\n");
-    printf("\033[38;5;196m★ \033[38;5;255mWelcome to \033[38;5;46mQuip\033[38;5;255m - A modern, enhanced shell experience!\033[0m\n");
-    printf("\033[38;5;196m★ \033[38;5;255mFeatures: Pipes, History, Job Control, Auto-completion\033[0m\n");
-    printf("\033[38;5;196m★ \033[38;5;255mType '\033[38;5;51mhelp\033[38;5;255m' for available commands\033[0m\n\n");
-    
+int main(void) {
+    config_init();
     signals_init();
     jobs_init();
     history_init();
     terminal_init();
     prompt_init();
+    plugin_init();
+
+    if (isatty(STDIN_FILENO)) {
+        printf(ANSI_GREEN "╭─────────────────────────────────────────────────────╮\n");
+        printf("│" ANSI_YELLOW "  ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ " ANSI_GREEN "│\n");
+        printf("│" ANSI_YELLOW "  ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║ " ANSI_GREEN "│\n");
+        printf("│" ANSI_YELLOW "     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║ " ANSI_GREEN "│\n");
+        printf("│" ANSI_YELLOW "     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║ " ANSI_GREEN "│\n");
+        printf("│" ANSI_YELLOW "     ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║ " ANSI_GREEN "│\n");
+        printf("│" ANSI_YELLOW "     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝ " ANSI_GREEN "│\n");
+        printf("│" ANSI_BLUE "                 Quip Shell v0.4" ANSI_GREEN "                  │\n");
+        printf("╰─────────────────────────────────────────────────────╯\n");
+        printf(ANSI_RED "★ " ANSI_WHITE "Welcome to " ANSI_GREEN "Quip" ANSI_WHITE " - A modern, enhanced shell experience!\n");
+        printf(ANSI_RED "★ " ANSI_WHITE "Features: Pipes, History, Job Control, Auto-completion, Python Plugins\n");
+        printf(ANSI_RED "★ " ANSI_WHITE "Type '" ANSI_BLUE "help" ANSI_WHITE "' for available commands\n\n" ANSI_RESET);
+    }
 
     while (!should_exit_shell()) {
         cleanup_jobs();
         char *cmd_line = get_command_line();
         if (was_sigint_received()) {
-            print_prompt();
-            fflush(stdout);
+            if (isatty(STDIN_FILENO)) {
+                print_prompt();
+                fflush(stdout);
+            }
             continue;
         }
-        if (read_line(cmd_line, MAX_LINE) >= 0) {
-            execute_line(cmd_line);
+        int ret = read_line(cmd_line, MAX_LINE);
+        if (ret < 0) {
+            if (!isatty(STDIN_FILENO)) {
+                break;
+            }
+            continue;
         }
+        execute_line(cmd_line);
     }
 
     prompt_cleanup();
+    plugin_cleanup();
     terminal_cleanup();
     history_cleanup();
     signals_cleanup();
-    printf("\033[38;5;196m★ \033[38;5;255mThank you for using \033[38;5;46mQuip\033[38;5;255m! Goodbye! 👋\033[0m\n");
+
+    if (isatty(STDIN_FILENO)) {
+        printf(ANSI_RED "★ " ANSI_WHITE "Thank you for using " ANSI_GREEN "Quip" ANSI_WHITE "! Goodbye!\n" ANSI_RESET);
+    }
     return 0;
 }
