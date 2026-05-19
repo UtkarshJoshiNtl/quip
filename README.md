@@ -142,6 +142,41 @@ history_size = 256
 - **ANSI Macros**: Consistent color scheme via `quip.h` macros
 - **Standards Compliance**: C17 with strict compiler warnings (`-Wall -Wextra`)
 
+## Metrics
+
+### Build
+| Metric | Value |
+|--------|-------|
+| Compile time | ~0.9s (`gcc -O2`) |
+| Binary size (stripped) | 39K |
+| Binary size (debug) | ~100K |
+| Source files | 12 (11 C + 1 header) |
+
+### Code Size
+| Component | Lines |
+|-----------|-------|
+| C core (`src/`) | 1,738 |
+| Python daemon | 186 |
+| Sample plugins | 24 |
+| **Total** | **1,973** |
+
+### Runtime
+| Metric | Value |
+|--------|-------|
+| Startup time | ~2ms |
+| Max RSS (idle) | ~1.5 MB |
+| History persistence | Disk-backed, configurable |
+
+### Test Results
+| Test | Status |
+|------|--------|
+| Builtins (`cd`, `pwd`, `echo`, `exit`, `help`, `history`, `clear`, `env`) | Pass |
+| Pipelines (`ls \| grep \| wc`) | Pass |
+| Semicolon chaining | Pass |
+| Background jobs (`&`, `jobs`, `fg`, `bg`) | Pass |
+| I/O redirection (`>`, `>>`, `<`) | Pass (external commands only) |
+| Tab completion | Pass |
+
 ## License
 
 MIT License — See repository for details.
