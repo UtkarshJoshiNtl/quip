@@ -14,7 +14,7 @@ debug: CFLAGS += -g -DDEBUG
 debug: $(TARGET)
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) *.o
 
 test: $(TARGET)
 	./test.sh

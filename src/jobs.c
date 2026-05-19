@@ -1,4 +1,5 @@
 #include "quip.h"
+#include <signal.h>
 
 #define MAX_JOBS 32
 

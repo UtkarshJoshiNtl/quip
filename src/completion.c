@@ -8,14 +8,12 @@ static const char *builtin_commands[] = {
     "jobs", "fg", "bg", "exit", NULL
 };
 
-static int count_matching_builtins(const char *prefix) {
-    int count = 0;
-    size_t plen = strlen(prefix);
+static int builtin_commands_lookup(const char *name) {
     for (int i = 0; builtin_commands[i]; i++) {
-        if (strncmp(builtin_commands[i], prefix, plen) == 0)
-            count++;
+        if (strcmp(builtin_commands[i], name) == 0)
+            return 1;
     }
-    return count;
+    return 0;
 }
 
 static int count_matches(const char *prefix, const char **matches, int max_matches) {
@@ -25,7 +23,9 @@ static int count_matches(const char *prefix, const char **matches, int max_match
     for (int i = 0; builtin_commands[i]; i++) {
         if (strncmp(builtin_commands[i], prefix, plen) == 0) {
             if (matches && count < max_matches)
-                matches[count] = builtin_commands[i];
+                matches[count] = strdup(builtin_commands[i]);
+            if (matches && matches[count] == NULL)
+                return count;
             count++;
         }
     }
@@ -112,9 +112,8 @@ void handle_completion(char *buf, int *pos, int *len) {
                   match_len - prefix_len);
         }
 
-        int builtin_count = count_matching_builtins(prefix);
-        for (int i = builtin_count; i < match_count; i++)
-            free((void *)matches[i]);
+        for (int i = 0; i < match_count; i++)
+            free((char *)matches[i]);
 
     } else {
         const char *common_prefix = find_longest_common_prefix(matches, match_count);
@@ -133,10 +132,11 @@ void handle_completion(char *buf, int *pos, int *len) {
                   common_len - prefix_len);
         } else {
             write(STDOUT_FILENO, "\n", 1);
-            int builtin_count = count_matching_builtins(prefix);
 
             for (int i = 0; i < match_count; i++) {
-                if (i < builtin_count)
+                size_t plen = strlen(prefix);
+                if (strncmp(matches[i], prefix, plen) == 0 &&
+                    builtin_commands_lookup(matches[i]))
                     printf(ANSI_GREEN "  %s\n" ANSI_RESET, matches[i]);
                 else
                     printf(ANSI_WHITE "  %s\n" ANSI_RESET, matches[i]);
@@ -148,8 +148,7 @@ void handle_completion(char *buf, int *pos, int *len) {
             fflush(stdout);
         }
 
-        int builtin_count = count_matching_builtins(prefix);
-        for (int i = builtin_count; i < match_count; i++)
-            free((void *)matches[i]);
+        for (int i = 0; i < match_count; i++)
+            free((char *)matches[i]);
     }
 }

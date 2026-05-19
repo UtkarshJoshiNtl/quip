@@ -86,7 +86,8 @@ int builtin_clear(char **argv) {
 
 int builtin_echo(char **argv) {
     for (int i = 1; argv[i] != NULL; i++) {
-        printf("%s%s", argv[i], argv[i+1] ? " " : "");
+        if (i > 1) printf(" ");
+        printf("%s", argv[i]);
     }
     printf("\n");
     return 1;
