@@ -1,10 +1,7 @@
-"""Example Quip plugin."""
-
 def register():
     return {
         "name": "hello",
         "description": "Prints a greeting",
-        "version": "1.0.0",
     }
 
 def execute(argv, cwd, env):

@@ -1,10 +1,7 @@
-"""Reverses each argument and prints them."""
-
 def register():
     return {
         "name": "reverse",
         "description": "Reverse each argument",
-        "version": "1.0.0",
     }
 
 def execute(argv, cwd, env):

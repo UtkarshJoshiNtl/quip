@@ -10,7 +10,6 @@
 
 #define PLUGIN_SOCKET "\0quip-daemon"
 #define PLUGIN_SOCKET_LEN 12
-#define PLUGIN_TIMEOUT_MS 5000
 
 static int daemon_launched = 0;
 
@@ -217,56 +216,46 @@ int plugin_exec(char **argv) {
     char *resp = plugin_recv(fd, &resp_len);
     close(fd);
 
-    if (!resp) {
+    if (!resp)
         return -1;
-    }
 
     int exit_code = -1;
 
     if (resp_len > 0) {
         const char *p = resp;
-        const char *stdout_start = NULL;
-        const char *stderr_start = NULL;
-        const char *code_start = NULL;
+        const char *code_start = strstr(p, "\"exit_code\": ");
+        if (!code_start) code_start = strstr(p, "\"exit_code\":");
 
-        if ((stdout_start = strstr(p, "\"stdout\": \"")) != NULL)
-            stdout_start += 11;
-        else if ((stdout_start = strstr(p, "\"stdout\":\"")) != NULL)
-            stdout_start += 10;
-
-        if ((stderr_start = strstr(p, "\"stderr\": \"")) != NULL)
-            stderr_start += 11;
-        else if ((stderr_start = strstr(p, "\"stderr\":\"")) != NULL)
-            stderr_start += 10;
-
-        if ((code_start = strstr(p, "\"exit_code\": ")) != NULL)
-            code_start += 13;
-        else if ((code_start = strstr(p, "\"exit_code\":")) != NULL)
-            code_start += 12;
-
-        if (code_start)
+        if (code_start) {
+            code_start += (code_start[12] == ' ') ? 13 : 12;
             exit_code = atoi(code_start);
+        }
 
         if (exit_code == 127) {
             free(resp);
             return -1;
         }
 
-        if (stdout_start) {
-            const char *end = strchr(stdout_start, '"');
-            if (end && end > stdout_start)
-                write_unescaped(stdout_start, (size_t)(end - stdout_start), stdout);
+        const char *out = strstr(p, "\"stdout\": ");
+        if (!out) out = strstr(p, "\"stdout\":\"");
+        if (out) {
+            out += (out[9] == ' ') ? 10 : 9;
+            const char *end = strchr(out, '"');
+            if (end && end > out)
+                write_unescaped(out, (size_t)(end - out), stdout);
         }
 
-        if (stderr_start) {
-            const char *end = strchr(stderr_start, '"');
-            if (end && end > stderr_start)
-                write_unescaped(stderr_start, (size_t)(end - stderr_start), stderr);
+        const char *err = strstr(p, "\"stderr\": ");
+        if (!err) err = strstr(p, "\"stderr\":\"");
+        if (err) {
+            err += (err[9] == ' ') ? 10 : 9;
+            const char *end = strchr(err, '"');
+            if (end && end > err)
+                write_unescaped(err, (size_t)(end - err), stderr);
         }
     }
 
     free(resp);
-
     return (exit_code >= 0) ? 0 : -1;
 }
 

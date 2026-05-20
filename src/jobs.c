@@ -129,33 +129,18 @@ int builtin_bg(char **argv) {
     return 1;
 }
 
-static int is_inside_quotes(const char *cmd, size_t pos) {
-    int in_quotes = 0;
-    int in_double_quotes = 0;
-
-    for (size_t i = 0; i < pos; i++) {
-        if (cmd[i] == '\'' && !in_double_quotes) {
-            in_quotes = !in_quotes;
-        } else if (cmd[i] == '"' && !in_quotes) {
-            in_double_quotes = !in_double_quotes;
-        }
-    }
-
-    return in_quotes || in_double_quotes;
-}
-
 int is_background_command(const char *cmd) {
     if (!cmd) return 0;
 
     size_t len = strlen(cmd);
     if (len == 0) return 0;
 
+    // skip trailing whitespace
     size_t pos = len - 1;
-    while (pos > 0 && (cmd[pos] == ' ' || cmd[pos] == '\t')) {
+    while (pos > 0 && (cmd[pos] == ' ' || cmd[pos] == '\t'))
         pos--;
-    }
 
-    return !is_inside_quotes(cmd, pos) && cmd[pos] == '&';
+    return cmd[pos] == '&';
 }
 
 char *strip_background_ampersand(char *cmd) {
@@ -165,13 +150,11 @@ char *strip_background_ampersand(char *cmd) {
     if (len == 0) return cmd;
 
     size_t pos = len - 1;
-    while (pos > 0 && (cmd[pos] == ' ' || cmd[pos] == '\t')) {
+    while (pos > 0 && (cmd[pos] == ' ' || cmd[pos] == '\t'))
         pos--;
-    }
 
-    if (!is_inside_quotes(cmd, pos) && cmd[pos] == '&') {
+    if (cmd[pos] == '&') {
         cmd[pos] = '\0';
-
         while (pos > 0 && (cmd[pos - 1] == ' ' || cmd[pos - 1] == '\t')) {
             cmd[pos - 1] = '\0';
             pos--;

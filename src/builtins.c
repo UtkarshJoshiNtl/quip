@@ -118,8 +118,6 @@ struct builtin builtins[] = {
 };
 
 builtin_func find_builtin(const char *name) {
-    if (!name) return NULL;
-
     for (int i = 0; builtins[i].name != NULL; i++) {
         if (strcmp(name, builtins[i].name) == 0)
             return builtins[i].func;

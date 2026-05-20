@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Quip plugin daemon — receives plugin requests over Unix domain socket."""
 
 import json
 import os
@@ -115,28 +114,6 @@ def handle_exec(conn, msg, plugins):
                         "stdout": "", "stderr": tb})
 
 
-def handle_list(conn, plugins):
-    info = {}
-    for name, path in plugins.items():
-        info[name] = {
-            "path": path,
-            "description": _get_description(path, name),
-        }
-    send_msg(conn, {"type": "plugin_list", "plugins": info})
-
-
-def _get_description(path, name):
-    try:
-        mod = load_plugin_module(path, name)
-        if hasattr(mod, "register"):
-            reg = mod.register()
-            if isinstance(reg, dict):
-                return reg.get("description", "")
-        return ""
-    except Exception:
-        return ""
-
-
 def main():
     global PLUGIN_DIRS
     PLUGIN_DIRS = discover_plugin_dirs()
@@ -158,8 +135,6 @@ def main():
 
             if msg_type == "exec":
                 handle_exec(conn, msg, plugins)
-            elif msg_type == "list":
-                handle_list(conn, plugins)
             elif msg_type == "reload":
                 plugins = discover_plugins()
                 send_msg(conn, {"type": "ok", "count": len(plugins)})

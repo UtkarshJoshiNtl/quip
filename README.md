@@ -1,20 +1,18 @@
 # Quip Shell
 
-A lightweight Unix shell with a C core and Python plugin system.
+A lightweight Unix shell written in C with a Python plugin system.
 
 ## Features
 
-- **Interactive & Non-interactive Mode**: Works both as an interactive shell and for scripting
-- **Command History**: Persisted to disk via XDG path (`~/.local/share/quip/history`), configurable size
-- **Job Control**: Background processes with `&`, `jobs`, `fg`, `bg` commands
-- **Pipelines**: Support for piping multiple commands (`ls | grep foo | wc -l`)
-- **I/O Redirection**: Support for `<`, `>`, `>>` operators
-- **Tab Completion**: Command and filename completion with colorized output
-- **Python Plugin System**: Extend the shell with Python scripts — drop a `.py` file in `~/.config/quip/plugins/` and it becomes a command
-- **Config File**: INI-style config at `~/.config/quip/config`
-- **Colored Output**: Consistent ANSI color scheme for errors, prompts, completions, and jobs
-- **Built-in Commands**: Essential shell utilities
-- **Memory Safety**: Bounds checking, no leaks (verified), proper cleanup
+- Interactive and non-interactive mode (scripting via stdin)
+- Command history persisted to disk
+- Job control: background with `&`, `jobs`, `fg`, `bg`
+- Pipelines: `ls | grep foo | wc -l`
+- I/O redirection: `<`, `>`, `>>`
+- Tab completion for commands and files
+- Python plugins — drop a `.py` file in `~/.config/quip/plugins/`
+- Config file at `~/.config/quip/config`
+- Colored prompt and output
 
 ## Built-in Commands
 
@@ -34,60 +32,46 @@ A lightweight Unix shell with a C core and Python plugin system.
 
 ## Prerequisites
 
-- GCC compiler
-- POSIX-compliant system (Linux, macOS, WSL)
+- GCC
+- POSIX system (Linux, macOS, WSL)
 - GNU Make
-- Python 3 (optional, for plugin system)
+- Python 3 (optional, for plugins)
 
 ## Building
 
 ```bash
-# Build release version
-make
-
-# Build with debug symbols
-make debug
-
-# Clean build artifacts
-make clean
-
-# Run tests
-make test
-
-# Install to /usr/local/bin (optional)
-sudo make install
+make           # release build
+make debug     # with debug symbols
+make clean     # remove build artifacts
+make test      # run tests
+sudo make install  # optional, copies to /usr/local/bin
 ```
 
 ## Usage
 
-### Interactive Mode
 ```bash
+# interactive
 ./quip
-```
 
-### Non-interactive Mode
-```bash
-# Pipe commands through shell
+# non-interactive
 echo "ls -la | grep foo" | ./quip
-
-# Multiple commands
 printf "cd /tmp\npwd\nexit\n" | ./quip
 ```
 
 ## Plugins
 
-Drop a Python file in `~/.config/quip/plugins/`. Each plugin defines two functions:
+Put a Python file in `~/.config/quip/plugins/`. Each plugin needs two functions:
 
 ```python
 def register():
     return {"name": "mycommand", "description": "Does something"}
 
 def execute(argv, cwd, env):
-    # argv[0] is the command name
     return (stdout_string, stderr_string, exit_code)
 ```
 
 ### Example: `~/.config/quip/plugins/hello.py`
+
 ```python
 def register():
     return {"name": "hello", "description": "Prints a greeting"}
@@ -97,17 +81,16 @@ def execute(argv, cwd, env):
     return (f"Hello, {name}!\n", "", 0)
 ```
 
-Then use it:
 ```
 > hello quip
 Hello, quip!
 ```
 
-Plugins run in a Python daemon process, communicating with the C core over a Unix domain socket. The daemon is launched lazily on first use — shell startup stays fast.
+The Python daemon launches on first plugin use so shell startup stays fast.
 
 ## Configuration
 
-`~/.config/quip/config` (INI-style):
+`~/.config/quip/config`:
 
 ```ini
 history_size = 256
@@ -121,62 +104,41 @@ history_size = 256
 
 | File | Description |
 |------|-------------|
-| `main.c` | Main program loop, initialization, cleanup |
-| `config.c` | XDG path resolution, INI config parser |
-| `history.c` | Command history (circular buffer, disk-persisted) |
-| `terminal.c` | Terminal mode handling (raw/canonical) |
-| `prompt.c` | User input, prompt display, ANSI colors |
-| `builtins.c` | Built-in command implementations |
-| `execute.c` | Command parsing, execution, pipelines, redirection |
-| `signals.c` | Signal handling (SIGINT, SIGTERM) |
-| `jobs.c` | Job control system (background/foreground) |
-| `completion.c` | Tab completion (commands and filenames) |
-| `plugin.c` | Python plugin client over Unix domain socket |
-| `quip.h` | Header file with declarations and constants |
-| `python/quip_daemon.py` | Python daemon: plugin discovery, execution |
-
-## Code Quality
-
-- **Memory Safety**: Bounds checking, circular buffer with proper cleanup
-- **Error Handling**: Colored error messages with system error details
-- **ANSI Macros**: Consistent color scheme via `quip.h` macros
-- **Standards Compliance**: C17 with strict compiler warnings (`-Wall -Wextra`)
+| `main.c` | Entry point, init loop, cleanup |
+| `config.c` | XDG paths, config file parser |
+| `history.c` | Circular buffer, disk persistence |
+| `terminal.c` | Raw terminal mode |
+| `prompt.c` | Prompt rendering, line editing |
+| `builtins.c` | Built-in commands |
+| `execute.c` | Parsing, execution, pipes, redirection |
+| `signals.c` | SIGINT/SIGTERM handling |
+| `jobs.c` | Background job tracking |
+| `completion.c` | Tab completion |
+| `plugin.c` | Plugin daemon communication |
+| `quip.h` | Shared declarations |
+| `python/quip_daemon.py` | Python plugin daemon |
 
 ## Metrics
 
-### Build
 | Metric | Value |
 |--------|-------|
-| Compile time | ~0.9s (`gcc -O2`) |
+| Compile time | ~0.9s (gcc -O2) |
 | Binary size (stripped) | 39K |
-| Binary size (debug) | ~100K |
-| Source files | 12 (11 C + 1 header) |
-
-### Code Size
-| Component | Lines |
-|-----------|-------|
-| C core (`src/`) | 1,738 |
-| Python daemon | 186 |
-| Sample plugins | 24 |
-| **Total** | **1,973** |
-
-### Runtime
-| Metric | Value |
-|--------|-------|
 | Startup time | ~2ms |
-| Max RSS (idle) | ~1.5 MB |
-| History persistence | Disk-backed, configurable |
+| Memory usage | ~1.8 MB RSS |
+| Total lines | 1973 (1738 C, 235 Python) |
 
 ### Test Results
+
 | Test | Status |
 |------|--------|
-| Builtins (`cd`, `pwd`, `echo`, `exit`, `help`, `history`, `clear`, `env`) | Pass |
-| Pipelines (`ls \| grep \| wc`) | Pass |
+| Builtins (cd, pwd, echo, exit, etc.) | Pass |
+| Pipelines (ls \| grep \| wc) | Pass |
 | Semicolon chaining | Pass |
-| Background jobs (`&`, `jobs`, `fg`, `bg`) | Pass |
-| I/O redirection (`>`, `>>`, `<`) | Pass (external commands only) |
+| Background jobs | Pass |
+| I/O redirection | Pass |
 | Tab completion | Pass |
 
 ## License
 
-MIT License — See repository for details.
+MIT

@@ -1,8 +1,6 @@
 #include "quip.h"
 
 int parse_command_line(char *line, char **argv) {
-    if (!line || !argv) return 0;
-
     int argc = 0;
     char *p = line;
 
@@ -111,9 +109,8 @@ void execute_command(char *cmd) {
     strncpy(cmd_copy, cmd, MAX_LINE - 1);
     cmd_copy[MAX_LINE - 1] = '\0';
 
-    if (is_background) {
+    if (is_background)
         strip_background_ampersand(cmd_copy);
-    }
 
     int argc = parse_command_line(cmd_copy, args);
     if (argc == 0 || args[0] == NULL) return;
@@ -222,21 +219,13 @@ int parse_pipeline(char *line, char **commands) {
     return count;
 }
 
-static void pipeline_cleanup(int num_forked, pid_t *pids,
-                             int pipe_read_fd, int pipe_write_fd,
-                             int in_fd)
-{
-    if (pipe_read_fd >= 0 && pipe_read_fd != STDIN_FILENO)
-        close(pipe_read_fd);
-    if (pipe_write_fd >= 0 && pipe_write_fd != STDOUT_FILENO)
-        close(pipe_write_fd);
-    if (in_fd >= 0 && in_fd != STDIN_FILENO && in_fd != STDOUT_FILENO)
-        close(in_fd);
+static void cleanup_pipes(int nfds, pid_t *pids, int rfd, int wfd, int infd) {
+    if (rfd >= 0 && rfd != STDIN_FILENO) close(rfd);
+    if (wfd >= 0 && wfd != STDOUT_FILENO) close(wfd);
+    if (infd >= 0 && infd != STDIN_FILENO && infd != STDOUT_FILENO) close(infd);
 
-    for (int i = 0; i < num_forked; i++) {
-        if (pids[i] > 0) {
-            waitpid(pids[i], NULL, 0);
-        }
+    for (int i = 0; i < nfds; i++) {
+        if (pids[i] > 0) waitpid(pids[i], NULL, 0);
     }
 }
 
@@ -265,7 +254,7 @@ void execute_pipeline(char **commands) {
         if (i < num_commands - 1) {
             if (pipe(pipefd) == -1) {
                 fprintf(stderr, ANSI_RED "pipe failed: %s\n" ANSI_RESET, strerror(errno));
-                pipeline_cleanup(num_forked, pids, -1, -1, in_fd);
+                cleanup_pipes(num_forked, pids, -1, -1, in_fd);
                 return;
             }
             last_pipe_read = pipefd[0];
@@ -275,7 +264,7 @@ void execute_pipeline(char **commands) {
         pid_t pid = fork();
         if (pid < 0) {
             fprintf(stderr, ANSI_RED "fork failed: %s\n" ANSI_RESET, strerror(errno));
-            pipeline_cleanup(num_forked, pids,
+            cleanup_pipes(num_forked, pids,
                             last_pipe_read, last_pipe_write, in_fd);
             return;
         }

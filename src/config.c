@@ -93,7 +93,6 @@ void config_init(void) {
 }
 
 const char *config_get(const char *key) {
-    if (!key) return NULL;
     for (int i = 0; i < config_count; i++) {
         if (strcmp(config_entries[i].key, key) == 0)
             return config_entries[i].val;
