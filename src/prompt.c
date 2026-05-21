@@ -10,31 +10,29 @@ void print_prompt(void) {
     char cwd[1024];
     char *home = getenv("HOME");
     char hostname[256];
-    
+
     if (getcwd(cwd, sizeof(cwd)) == NULL) {
         strncpy(cwd, "???", sizeof(cwd) - 1);
         cwd[sizeof(cwd) - 1] = '\0';
     }
-    
+
     if (gethostname(hostname, sizeof(hostname)) == -1) {
         strncpy(hostname, "localhost", sizeof(hostname) - 1);
         hostname[sizeof(hostname) - 1] = '\0';
     }
-    
-    // Get username
+
     char *username = getenv("USER");
     if (!username) username = "user";
-    
-    // Modern prompt: [user@hostname] path $
-    printf("\033[38;5;141m┌──[\033[38;5;220m%s\033[38;5;255m@\033[38;5;196m%s\033[38;5;141m]\033[0m\n", username, hostname);
-    
+
+    printf(ANSI_CYAN "┌──[" ANSI_YELLOW "%s" ANSI_WHITE "@" ANSI_RED "%s" ANSI_CYAN "]\n", username, hostname);
+
     if (home != NULL && strncmp(cwd, home, strlen(home)) == 0) {
-        printf("\033[38;5;141m├──[\033[38;5;51m~%s\033[38;5;141m]\033[0m\n", cwd + strlen(home));
+        printf(ANSI_CYAN "├──[" ANSI_BLUE "~%s" ANSI_CYAN "]\n", cwd + strlen(home));
     } else {
-        printf("\033[38;5;141m├──[\033[38;5;51m%s\033[38;5;141m]\033[0m\n", cwd);
+        printf(ANSI_CYAN "├──[" ANSI_BLUE "%s" ANSI_CYAN "]\n", cwd);
     }
-    
-    printf("\033[38;5;141m└─╼\033[38;5;46m➤\033[0m ");
+
+    printf(ANSI_CYAN "└─╼" ANSI_GREEN "➤ " ANSI_RESET);
 }
 
 int read_line(char *buffer, size_t size) {
@@ -56,7 +54,7 @@ int read_line(char *buffer, size_t size) {
     int hist_idx = history_size();
     char buf[MAX_LINE];
     char saved[MAX_LINE];
-    
+
     buf[0] = '\0';
     saved[0] = '\0';
 
@@ -77,7 +75,7 @@ int read_line(char *buffer, size_t size) {
                 pos--;
                 len--;
                 buf[len] = '\0';
-                
+
                 write(STDOUT_FILENO, "\r", 1);
                 print_prompt();
                 printf("%.*s ", len, buf);
@@ -135,9 +133,9 @@ int read_line(char *buffer, size_t size) {
                 pos++;
                 len++;
                 buf[len] = '\0';
-                
+
                 write(STDOUT_FILENO, buf + pos - 1, len - pos + 1);
-                
+
                 if (len - pos > 0) {
                     printf("\033[%dD", len - pos);
                     fflush(stdout);
@@ -154,7 +152,7 @@ int read_line(char *buffer, size_t size) {
 
     strncpy(buffer, buf, size - 1);
     buffer[size - 1] = '\0';
-    
+
     return len;
 }
 

@@ -3,18 +3,18 @@
 int builtin_cd(char **argv) {
     if (argv[1] != NULL) {
         if (chdir(argv[1]) != 0) {
-            perror("chdir failed");
+            fprintf(stderr, ANSI_RED "cd: %s: %s\n" ANSI_RESET, argv[1], strerror(errno));
             return 0;
         }
     } else {
         char *home = getenv("HOME");
         if (home) {
             if (chdir(home) != 0) {
-                perror("chdir to home failed");
+                fprintf(stderr, ANSI_RED "cd: %s: %s\n" ANSI_RESET, home, strerror(errno));
                 return 0;
             }
         } else {
-            fprintf(stderr, "cd: HOME not set and no directory specified\n");
+            fprintf(stderr, ANSI_RED "cd: HOME not set and no directory specified\n" ANSI_RESET);
             return 0;
         }
     }
@@ -28,35 +28,36 @@ int builtin_pwd(char **argv) {
         printf("%s\n", cwd);
         return 1;
     } else {
-        perror("getcwd failed");
+        perror("pwd failed");
         return 0;
     }
 }
 
 int builtin_help(char **argv) {
     (void)argv;
-    printf("\033[38;5;46m╭─────────────────────────────────────────────────────╮\033[0m\n");
-    printf("\033[38;5;46m│\033[38;5;220m              Quip Shell v0.3 - Help              \033[38;5;46m│\033[0m\n");
-    printf("\033[38;5;46m╰─────────────────────────────────────────────────────╯\033[0m\n");
-    printf("\033[38;5;255m🔧 \033[38;5;220mBuilt-in Commands:\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m cd [dir]      \033[38;5;255m- Change directory\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m pwd           \033[38;5;255m- Print working directory\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m help          \033[38;5;255m- Show this help message\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m history       \033[38;5;255m- Show command history\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m clear         \033[38;5;255m- Clear the screen\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m echo [text]   \033[38;5;255m- Print text to stdout\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m env           \033[38;5;255m- List environment variables\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m jobs          \033[38;5;255m- List background jobs\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m fg [job_id]   \033[38;5;255m- Bring job to foreground\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;51m bg [job_id]   \033[38;5;255m- Resume job in background\033[0m\n");
-    printf("\033[38;5;240m└─\033[38;5;51m exit          \033[38;5;255m- Exit the shell\033[0m\n");
-    printf("\n\033[38;5;255m✨ \033[38;5;220mSpecial Features:\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;46m Pipes         \033[38;5;255m- Use | to pipe commands\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;46m Redirection   \033[38;5;255m- Use >, >>, < for I/O redirection\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;46m Background    \033[38;5;255m- Use & to run commands in background\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;46m History       \033[38;5;255m- Use ↑/↓ arrows to navigate history\033[0m\n");
-    printf("\033[38;5;240m├─\033[38;5;46m Auto-complete \033[38;5;255m- Use TAB to complete commands/files\033[0m\n");
-    printf("\033[38;5;240m└─\033[38;5;46m Ctrl+C        \033[38;5;255m- Cancel current command\033[0m\n");
+    printf(ANSI_GREEN "╭─────────────────────────────────────────────────────╮\n");
+    printf("│" ANSI_YELLOW "              Quip Shell v0.4 - Help              " ANSI_GREEN "│\n");
+    printf("╰─────────────────────────────────────────────────────╯\n");
+    printf(ANSI_WHITE "Built-in Commands:\n" ANSI_RESET);
+    printf(ANSI_GRAY "├─" ANSI_BLUE " cd [dir]      " ANSI_WHITE "- Change directory\n");
+    printf(ANSI_GRAY "├─" ANSI_BLUE " pwd           " ANSI_WHITE "- Print working directory\n");
+    printf(ANSI_GRAY "├─" ANSI_BLUE " help          " ANSI_WHITE "- Show this help message\n");
+    printf(ANSI_GRAY "├─" ANSI_BLUE " history       " ANSI_WHITE "- Show command history\n");
+    printf(ANSI_GRAY "├─" ANSI_BLUE " clear         " ANSI_WHITE "- Clear the screen\n");
+    printf(ANSI_GRAY "├─" ANSI_BLUE " echo [text]   " ANSI_WHITE "- Print text to stdout\n");
+    printf(ANSI_GRAY "├─" ANSI_BLUE " env           " ANSI_WHITE "- List environment variables\n");
+    printf(ANSI_GRAY "├─" ANSI_BLUE " jobs          " ANSI_WHITE "- List background jobs\n");
+    printf(ANSI_GRAY "├─" ANSI_BLUE " fg [job_id]   " ANSI_WHITE "- Bring job to foreground\n");
+    printf(ANSI_GRAY "├─" ANSI_BLUE " bg [job_id]   " ANSI_WHITE "- Resume job in background\n");
+    printf(ANSI_GRAY "└─" ANSI_BLUE " exit          " ANSI_WHITE "- Exit the shell\n");
+    printf("\n" ANSI_YELLOW "Special Features:\n" ANSI_RESET);
+    printf(ANSI_GRAY "├─" ANSI_GREEN " Pipes         " ANSI_WHITE "- Use | to pipe commands\n");
+    printf(ANSI_GRAY "├─" ANSI_GREEN " Redirection   " ANSI_WHITE "- Use >, >>, < for I/O redirection\n");
+    printf(ANSI_GRAY "├─" ANSI_GREEN " Background    " ANSI_WHITE "- Use & to run commands in background\n");
+    printf(ANSI_GRAY "├─" ANSI_GREEN " History       " ANSI_WHITE "- Use up/down arrows to navigate history\n");
+    printf(ANSI_GRAY "├─" ANSI_GREEN " Tab complete  " ANSI_WHITE "- Use TAB to complete commands/files\n");
+    printf(ANSI_GRAY "├─" ANSI_GREEN " Plugins       " ANSI_WHITE "- Extend with Python scripts in ~/.config/quip/plugins/\n");
+    printf(ANSI_GRAY "└─" ANSI_GREEN " Ctrl+C        " ANSI_WHITE "- Cancel current command\n" ANSI_RESET);
     return 1;
 }
 
@@ -65,7 +66,7 @@ int builtin_history(char **argv) {
     for (int i = 0; i < history_size(); i++) {
         const char *cmd = history_get(i);
         if (cmd) {
-            printf("  %3d  %s\n", i + 1, cmd);
+            printf(ANSI_GRAY "  %3d  " ANSI_WHITE "%s\n" ANSI_RESET, i + 1, cmd);
         }
     }
     return 1;
@@ -85,7 +86,8 @@ int builtin_clear(char **argv) {
 
 int builtin_echo(char **argv) {
     for (int i = 1; argv[i] != NULL; i++) {
-        printf("%s%s", argv[i], argv[i+1] ? " " : "");
+        if (i > 1) printf(" ");
+        printf("%s", argv[i]);
     }
     printf("\n");
     return 1;
@@ -116,8 +118,6 @@ struct builtin builtins[] = {
 };
 
 builtin_func find_builtin(const char *name) {
-    if (!name) return NULL;
-    
     for (int i = 0; builtins[i].name != NULL; i++) {
         if (strcmp(name, builtins[i].name) == 0)
             return builtins[i].func;
