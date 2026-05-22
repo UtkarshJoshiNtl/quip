@@ -80,6 +80,7 @@ void handle_completion(char *buf, int *pos, int *len);
 
 void signals_init(void);
 void signals_cleanup(void);
+void signal_exit_shell(void);
 int should_exit_shell(void);
 int was_sigint_received(void);
 
@@ -95,6 +96,7 @@ int plugin_exec(char **argv);
 void plugin_cleanup(void);
 
 char *get_command_line(void);
+void print_prompt(void);
 void handle_redirection(char **argv);
 
 #endif

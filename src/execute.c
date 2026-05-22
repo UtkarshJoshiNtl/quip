@@ -65,7 +65,8 @@ void handle_redirection(char **argv) {
             close(fd);
             int j = i + 2;
             while (argv[j] != NULL) j++;
-            memmove(&argv[i], &argv[i+2], (j - i + 1) * sizeof(char *));
+            if (i <= j)
+                memmove(&argv[i], &argv[i+2], (j - i + 1) * sizeof(char *));
 
         } else if (strcmp(argv[i], "<") == 0) {
             if (argv[i+1] == NULL) {
@@ -91,7 +92,8 @@ void handle_redirection(char **argv) {
             close(fd);
             int j = i + 2;
             while (argv[j] != NULL) j++;
-            memmove(&argv[i], &argv[i+2], (j - i + 1) * sizeof(char *));
+            if (i <= j)
+                memmove(&argv[i], &argv[i+2], (j - i + 1) * sizeof(char *));
 
         } else {
             i++;
@@ -119,7 +121,7 @@ void execute_command(char *cmd) {
     if (bf) {
         int result = bf(args);
         if (result == -1) {
-            exit(0);
+            signal_exit_shell();
         }
         return;
     }
@@ -274,6 +276,7 @@ void execute_pipeline(char **commands) {
         if (pid == 0) {
             signal(SIGINT, SIG_DFL);
             signal(SIGTERM, SIG_DFL);
+            signal(SIGCHLD, SIG_DFL);
 
             if (i > 0) {
                 if (dup2(in_fd, STDIN_FILENO) == -1)

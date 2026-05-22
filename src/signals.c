@@ -33,12 +33,18 @@ void signals_init(void) {
 
     signal(SIGQUIT, SIG_IGN);
     signal(SIGCHLD, SIG_DFL);
+    signal(SIGTSTP, SIG_IGN);
 }
 
 void signals_cleanup(void) {
     signal(SIGINT, SIG_DFL);
     signal(SIGTERM, SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
+    signal(SIGTSTP, SIG_DFL);
+}
+
+void signal_exit_shell(void) {
+    should_exit = 1;
 }
 
 int should_exit_shell(void) {

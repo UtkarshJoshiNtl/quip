@@ -7,11 +7,13 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 
 #define PLUGIN_SOCKET "\0quip-daemon"
 #define PLUGIN_SOCKET_LEN 12
 
 static int daemon_launched = 0;
+static pid_t daemon_pid = -1;
 
 static int plugin_connect(void) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -116,7 +118,10 @@ static int plugin_launch_daemon(void) {
         _exit(1);
     }
 
-    usleep(200000);
+    daemon_pid = pid;
+
+    struct timespec ts200 = {0, 200000000L};
+    nanosleep(&ts200, NULL);
 
     for (int i = 0; i < 10; i++) {
         int fd = plugin_connect();
@@ -125,7 +130,8 @@ static int plugin_launch_daemon(void) {
             daemon_launched = 1;
             return 0;
         }
-        usleep(100000);
+        struct timespec ts100 = {0, 100000000L};
+        nanosleep(&ts100, NULL);
     }
 
     int status;
@@ -168,6 +174,10 @@ static void write_unescaped(const char *s, size_t slen, FILE *stream) {
             switch (s[i+1]) {
                 case 'n': fputc('\n', stream); i++; break;
                 case 't': fputc('\t', stream); i++; break;
+                case 'r': fputc('\r', stream); i++; break;
+                case 'b': fputc('\b', stream); i++; break;
+                case 'f': fputc('\f', stream); i++; break;
+                case '/': fputc('/', stream); i++; break;
                 case '\\': fputc('\\', stream); i++; break;
                 case '"': fputc('"', stream); i++; break;
                 default: fputc(s[i], stream); break;
@@ -184,7 +194,11 @@ int plugin_exec(char **argv) {
 
     int fd = plugin_connect();
     if (fd < 0) {
-        if (!daemon_launched && plugin_launch_daemon() < 0)
+        if (daemon_launched) {
+            daemon_launched = 0;
+            daemon_pid = -1;
+        }
+        if (plugin_launch_daemon() < 0)
             return -1;
         fd = plugin_connect();
         if (fd < 0)
@@ -192,8 +206,10 @@ int plugin_exec(char **argv) {
     }
 
     char cwd[1024];
-    if (!getcwd(cwd, sizeof(cwd)))
+    if (!getcwd(cwd, sizeof(cwd))) {
         strncpy(cwd, "/", sizeof(cwd) - 1);
+        cwd[sizeof(cwd) - 1] = '\0';
+    }
 
     char json[8192];
     int pos = snprintf(json, sizeof(json),
@@ -264,5 +280,10 @@ void plugin_cleanup(void) {
     if (fd >= 0) {
         plugin_send(fd, "{\"type\":\"shutdown\"}");
         close(fd);
+    }
+    if (daemon_pid > 0) {
+        int status;
+        waitpid(daemon_pid, &status, 0);
+        daemon_pid = -1;
     }
 }
