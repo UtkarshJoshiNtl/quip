@@ -274,6 +274,7 @@ void execute_pipeline(char **commands) {
         if (pid == 0) {
             signal(SIGINT, SIG_DFL);
             signal(SIGTERM, SIG_DFL);
+            signal(SIGCHLD, SIG_DFL);
 
             if (i > 0) {
                 if (dup2(in_fd, STDIN_FILENO) == -1)

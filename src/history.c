@@ -32,6 +32,10 @@ void history_init(void) {
     if (history_max > 4096) history_max = 4096;
 
     history = calloc((size_t)history_max, sizeof(char *));
+    if (!history) {
+        history_max = 0;
+        return;
+    }
     history_len = 0;
     history_head = 0;
 

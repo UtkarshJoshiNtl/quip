@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 
 #define PLUGIN_SOCKET "\0quip-daemon"
 #define PLUGIN_SOCKET_LEN 12
@@ -119,7 +120,8 @@ static int plugin_launch_daemon(void) {
 
     daemon_pid = pid;
 
-    usleep(200000);
+    struct timespec ts200 = {0, 200000000L};
+    nanosleep(&ts200, NULL);
 
     for (int i = 0; i < 10; i++) {
         int fd = plugin_connect();
@@ -128,7 +130,8 @@ static int plugin_launch_daemon(void) {
             daemon_launched = 1;
             return 0;
         }
-        usleep(100000);
+        struct timespec ts100 = {0, 100000000L};
+        nanosleep(&ts100, NULL);
     }
 
     int status;
@@ -171,6 +174,10 @@ static void write_unescaped(const char *s, size_t slen, FILE *stream) {
             switch (s[i+1]) {
                 case 'n': fputc('\n', stream); i++; break;
                 case 't': fputc('\t', stream); i++; break;
+                case 'r': fputc('\r', stream); i++; break;
+                case 'b': fputc('\b', stream); i++; break;
+                case 'f': fputc('\f', stream); i++; break;
+                case '/': fputc('/', stream); i++; break;
                 case '\\': fputc('\\', stream); i++; break;
                 case '"': fputc('"', stream); i++; break;
                 default: fputc(s[i], stream); break;
@@ -199,8 +206,10 @@ int plugin_exec(char **argv) {
     }
 
     char cwd[1024];
-    if (!getcwd(cwd, sizeof(cwd)))
+    if (!getcwd(cwd, sizeof(cwd))) {
         strncpy(cwd, "/", sizeof(cwd) - 1);
+        cwd[sizeof(cwd) - 1] = '\0';
+    }
 
     char json[8192];
     int pos = snprintf(json, sizeof(json),
