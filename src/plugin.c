@@ -77,6 +77,7 @@ static int plugin_launch_daemon(void) {
         signal(SIGINT, SIG_DFL);
         signal(SIGTERM, SIG_DFL);
         signal(SIGCHLD, SIG_DFL);
+        signal(SIGTSTP, SIG_DFL);
         close(STDIN_FILENO);
         close(STDOUT_FILENO);
         close(STDERR_FILENO);

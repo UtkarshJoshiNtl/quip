@@ -8,7 +8,7 @@ static int history_head = 0;
 static char history_file[576] = {0};
 
 static void history_save_to_disk(void) {
-    if (history_file[0] == '\0') return;
+    if (history_file[0] == '\0' || !history) return;
 
     char tmpfile[640];
     snprintf(tmpfile, sizeof(tmpfile), "%s.tmp", history_file);
@@ -73,6 +73,7 @@ void history_init(void) {
 }
 
 void history_cleanup(void) {
+    if (!history) return;
     history_save_to_disk();
     for (int i = 0; i < history_len; i++) {
         int idx = (history_head + i) % history_max;
@@ -87,7 +88,7 @@ void history_cleanup(void) {
 }
 
 void history_push(const char *line) {
-    if (!line || line[0] == '\0') return;
+    if (!line || line[0] == '\0' || !history) return;
 
     if (history_len > 0) {
         int last = (history_head + history_len - 1) % history_max;
