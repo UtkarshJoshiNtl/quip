@@ -41,6 +41,10 @@ void signals_cleanup(void) {
     signal(SIGQUIT, SIG_DFL);
 }
 
+void signal_exit_shell(void) {
+    should_exit = 1;
+}
+
 int should_exit_shell(void) {
     return should_exit;
 }

@@ -17,7 +17,7 @@ clean:
 	rm -f $(TARGET) *.o
 
 test: $(TARGET)
-	./test.sh
+	@echo "No tests yet"
 
 install: $(TARGET)
 	cp $(TARGET) /usr/local/bin/

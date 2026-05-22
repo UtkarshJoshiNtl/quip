@@ -12,6 +12,7 @@
 #define PLUGIN_SOCKET_LEN 12
 
 static int daemon_launched = 0;
+static pid_t daemon_pid = -1;
 
 static int plugin_connect(void) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -116,6 +117,8 @@ static int plugin_launch_daemon(void) {
         _exit(1);
     }
 
+    daemon_pid = pid;
+
     usleep(200000);
 
     for (int i = 0; i < 10; i++) {
@@ -184,7 +187,11 @@ int plugin_exec(char **argv) {
 
     int fd = plugin_connect();
     if (fd < 0) {
-        if (!daemon_launched && plugin_launch_daemon() < 0)
+        if (daemon_launched) {
+            daemon_launched = 0;
+            daemon_pid = -1;
+        }
+        if (plugin_launch_daemon() < 0)
             return -1;
         fd = plugin_connect();
         if (fd < 0)
@@ -264,5 +271,10 @@ void plugin_cleanup(void) {
     if (fd >= 0) {
         plugin_send(fd, "{\"type\":\"shutdown\"}");
         close(fd);
+    }
+    if (daemon_pid > 0) {
+        int status;
+        waitpid(daemon_pid, &status, 0);
+        daemon_pid = -1;
     }
 }

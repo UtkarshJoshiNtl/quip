@@ -1,8 +1,6 @@
 #include "quip.h"
 #include <dirent.h>
 
-extern void print_prompt(void);
-
 static const char *builtin_commands[] = {
     "cd", "pwd", "help", "history", "clear", "echo", "env",
     "jobs", "fg", "bg", "exit", NULL

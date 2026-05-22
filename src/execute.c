@@ -119,7 +119,7 @@ void execute_command(char *cmd) {
     if (bf) {
         int result = bf(args);
         if (result == -1) {
-            exit(0);
+            signal_exit_shell();
         }
         return;
     }

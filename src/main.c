@@ -1,7 +1,5 @@
 #include "quip.h"
 
-extern void print_prompt(void);
-
 int main(void) {
     config_init();
     signals_init();
