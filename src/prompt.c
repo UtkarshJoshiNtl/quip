@@ -7,6 +7,7 @@ char *get_command_line(void) {
 }
 
 void print_prompt(void) {
+    printf("\r");
     char cwd[1024];
     char *home = getenv("HOME");
     char hostname[256];
@@ -24,15 +25,19 @@ void print_prompt(void) {
     char *username = getenv("USER");
     if (!username) username = "user";
 
-    printf(ANSI_CYAN "┌──[" ANSI_YELLOW "%s" ANSI_WHITE "@" ANSI_RED "%s" ANSI_CYAN "]\n", username, hostname);
+    char pretty[1024];
+    if (home && strncmp(cwd, home, strlen(home)) == 0)
+        snprintf(pretty, sizeof(pretty), "~%s", cwd + strlen(home));
+    else
+        snprintf(pretty, sizeof(pretty), "%s", cwd);
 
-    if (home != NULL && strncmp(cwd, home, strlen(home)) == 0) {
-        printf(ANSI_CYAN "├──[" ANSI_BLUE "~%s" ANSI_CYAN "]\n", cwd + strlen(home));
-    } else {
-        printf(ANSI_CYAN "├──[" ANSI_BLUE "%s" ANSI_CYAN "]\n", cwd);
-    }
+    printf(ANSI_ACCENT "%s" ANSI_DIM "@" ANSI_ACCENT "%s" ANSI_DIM " %s " ANSI_GRAY "➤" ANSI_RESET " ",
+           username, hostname, pretty);
+}
 
-    printf(ANSI_CYAN "└─╼" ANSI_GREEN "➤ " ANSI_RESET);
+void print_continuation_prompt(void) {
+    printf("\r" ANSI_DIM "──> " ANSI_RESET);
+    fflush(stdout);
 }
 
 int read_line(char *buffer, size_t size) {
@@ -61,10 +66,34 @@ int read_line(char *buffer, size_t size) {
     while (1) {
         char c;
         ssize_t result = read(STDIN_FILENO, &c, 1);
-        if (result <= 0) break;
+        if (result <= 0) {
+            if (len == 0) return -1;
+            break;
+        }
 
         if (c == '\n' || c == '\r') {
-            write(STDOUT_FILENO, "\n", 1);
+            int cont = 0;
+
+            if (len > 0 && buf[len-1] == '\\') {
+                int n = 0;
+                while (n < len && buf[len-1-n] == '\\') n++;
+                if (n & 1) { buf[--len] = '\0'; cont = 1; }
+            }
+
+            if (!cont) {
+                int q = 0;
+                for (int i = 0; i < len; i++)
+                    if (buf[i] == '"') q++;
+                if (q & 1) cont = 1;
+            }
+
+            if (cont) {
+                write(STDOUT_FILENO, "\r\n", 2);
+                print_continuation_prompt();
+                continue;
+            }
+
+            write(STDOUT_FILENO, "\r\n", 2);
             buf[len] = '\0';
             break;
         }
@@ -76,12 +105,11 @@ int read_line(char *buffer, size_t size) {
                 len--;
                 buf[len] = '\0';
 
-                write(STDOUT_FILENO, "\r", 1);
+                printf("\r\033[K");
                 print_prompt();
-                printf("%.*s ", len, buf);
-                printf("\r");
-                print_prompt();
-                printf("%.*s", pos, buf);
+                printf("%s", buf);
+                if (pos < len)
+                    printf("\033[%dD", len - pos);
                 fflush(stdout);
             }
             continue;

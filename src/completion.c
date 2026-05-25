@@ -135,9 +135,9 @@ void handle_completion(char *buf, int *pos, int *len) {
                 size_t plen = strlen(prefix);
                 if (strncmp(matches[i], prefix, plen) == 0 &&
                     builtin_commands_lookup(matches[i]))
-                    printf(ANSI_GREEN "  %s\n" ANSI_RESET, matches[i]);
+                    printf(ANSI_ACCENT "  %s\n" ANSI_RESET, matches[i]);
                 else
-                    printf(ANSI_WHITE "  %s\n" ANSI_RESET, matches[i]);
+                    printf(ANSI_GRAY "  %s\n" ANSI_RESET, matches[i]);
             }
 
             write(STDOUT_FILENO, "\r", 1);

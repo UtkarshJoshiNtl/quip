@@ -24,11 +24,11 @@ void signals_init(void) {
     sa.sa_flags = SA_RESTART;
 
     if (sigaction(SIGINT, &sa, NULL) == -1) {
-        fprintf(stderr, ANSI_RED "sigaction SIGINT failed: %s\n" ANSI_RESET, strerror(errno));
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "sigaction SIGINT failed: %s\n" ANSI_RESET, strerror(errno));
     }
 
     if (sigaction(SIGTERM, &sa, NULL) == -1) {
-        fprintf(stderr, ANSI_RED "sigaction SIGTERM failed: %s\n" ANSI_RESET, strerror(errno));
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "sigaction SIGTERM failed: %s\n" ANSI_RESET, strerror(errno));
     }
 
     signal(SIGQUIT, SIG_IGN);

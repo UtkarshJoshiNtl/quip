@@ -60,16 +60,16 @@ int builtin_jobs(char **argv) {
     cleanup_jobs();
 
     if (job_count == 0) {
-        printf(ANSI_GRAY "No active jobs.\n" ANSI_RESET);
+        printf(ANSI_DIM "No active jobs.\n" ANSI_RESET);
         return 1;
     }
 
-    printf(ANSI_GREEN "Active Jobs:\n" ANSI_RESET);
+    printf(ANSI_ACCENT "Active Jobs:\n" ANSI_RESET);
     for (int i = 0; i < job_count; i++) {
-        printf(ANSI_YELLOW "  [%d] " ANSI_WHITE "PID: " ANSI_RED "%d " ANSI_WHITE "%s " ANSI_GREEN "%s\n" ANSI_RESET,
+        printf(ANSI_ACCENT "  [%d] " ANSI_GRAY "PID: " ANSI_DIM "%d " ANSI_GRAY "%s " ANSI_ACCENT "%s\n" ANSI_RESET,
                i + 1,
                jobs[i].pid,
-               jobs[i].status ? ANSI_GREEN "Running" : ANSI_RED "Stopped",
+               jobs[i].status ? ANSI_ACCENT "Running" : ANSI_DIM "Stopped",
                jobs[i].command);
     }
     return 1;
@@ -77,19 +77,19 @@ int builtin_jobs(char **argv) {
 
 int builtin_fg(char **argv) {
     if (argv[1] == NULL) {
-        fprintf(stderr, ANSI_RED "fg: job ID required\n" ANSI_RESET);
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "fg: job ID required\n" ANSI_RESET);
         return 0;
     }
 
     char *end;
     long raw = strtol(argv[1], &end, 10);
     if (*end != '\0' || raw < 1 || raw > job_count) {
-        fprintf(stderr, ANSI_RED "fg: invalid job ID\n" ANSI_RESET);
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "fg: invalid job ID\n" ANSI_RESET);
         return 0;
     }
     int job_id = (int)(raw - 1);
     if (job_id < 0 || job_id >= job_count) {
-        fprintf(stderr, ANSI_RED "fg: invalid job ID\n" ANSI_RESET);
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "fg: invalid job ID\n" ANSI_RESET);
         return 0;
     }
 
@@ -112,19 +112,19 @@ int builtin_fg(char **argv) {
 
 int builtin_bg(char **argv) {
     if (argv[1] == NULL) {
-        fprintf(stderr, ANSI_RED "bg: job ID required\n" ANSI_RESET);
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "bg: job ID required\n" ANSI_RESET);
         return 0;
     }
 
     char *end;
     long raw = strtol(argv[1], &end, 10);
     if (*end != '\0' || raw < 1 || raw > job_count) {
-        fprintf(stderr, ANSI_RED "bg: invalid job ID\n" ANSI_RESET);
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "bg: invalid job ID\n" ANSI_RESET);
         return 0;
     }
     int job_id = (int)(raw - 1);
     if (job_id < 0 || job_id >= job_count) {
-        fprintf(stderr, ANSI_RED "bg: invalid job ID\n" ANSI_RESET);
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "bg: invalid job ID\n" ANSI_RESET);
         return 0;
     }
 
@@ -136,7 +136,7 @@ int builtin_bg(char **argv) {
     }
 
     jobs[job_id].status = 1;
-    printf(ANSI_GREEN "[%d] %d %s &\n" ANSI_RESET, job_id + 1, pid, jobs[job_id].command);
+    printf(ANSI_ACCENT "[%d] %d %s &\n" ANSI_RESET, job_id + 1, pid, jobs[job_id].command);
 
     return 1;
 }
