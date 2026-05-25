@@ -21,7 +21,7 @@ static void ensure_dir(const char *path) {
 
 static void build_xdg_paths(void) {
     const char *xdg_config = getenv("XDG_CONFIG_HOME");
-    const char *xdg_data = getenv("XDG_STATE_HOME");
+    const char *xdg_data = getenv("XDG_DATA_HOME");
     const char *home = getenv("HOME");
 
     if (xdg_config && xdg_config[0]) {
