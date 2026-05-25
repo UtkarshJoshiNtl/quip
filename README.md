@@ -15,9 +15,9 @@ A lightweight Unix shell written in C with a Python plugin system.
 - Config file at `~/.config/quip/config`
 - Colored prompt and output
 
-## Screenshots
+## Screenshot
 
-![quip terminal](screenshots/quip.png)
+![quip terminal](screenshots/quip.png.png)
 
 ## Built-in Commands
 
