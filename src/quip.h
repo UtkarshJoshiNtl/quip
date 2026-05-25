@@ -16,13 +16,10 @@
 #define MAX_ARGS       64
 #define MAX_HISTORY   128
 
+#define ANSI_ACCENT  "\033[38;5;214m"
+#define ANSI_GRAY    "\033[38;5;255m"
+#define ANSI_DIM     "\033[38;5;250m"
 #define ANSI_RED     "\033[38;5;196m"
-#define ANSI_GREEN   "\033[38;5;46m"
-#define ANSI_YELLOW  "\033[38;5;220m"
-#define ANSI_BLUE    "\033[38;5;51m"
-#define ANSI_CYAN    "\033[38;5;141m"
-#define ANSI_GRAY    "\033[38;5;240m"
-#define ANSI_WHITE   "\033[38;5;255m"
 #define ANSI_BOLD    "\033[1m"
 #define ANSI_RESET   "\033[0m"
 
@@ -97,6 +94,7 @@ void plugin_cleanup(void);
 
 char *get_command_line(void);
 void print_prompt(void);
+void print_continuation_prompt(void);
 void handle_redirection(char **argv);
 
 #endif

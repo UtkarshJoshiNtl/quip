@@ -107,7 +107,6 @@ void history_push(const char *line) {
     history[idx] = strdup(line);
     if (history[idx]) {
         history_len++;
-        history_save_to_disk();
     }
 }
 

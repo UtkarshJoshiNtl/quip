@@ -10,18 +10,7 @@ int main(void) {
     plugin_init();
 
     if (isatty(STDIN_FILENO)) {
-        printf(ANSI_GREEN "╭─────────────────────────────────────────────────────╮\n");
-        printf("│" ANSI_YELLOW "  ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ " ANSI_GREEN "│\n");
-        printf("│" ANSI_YELLOW "  ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║ " ANSI_GREEN "│\n");
-        printf("│" ANSI_YELLOW "     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║ " ANSI_GREEN "│\n");
-        printf("│" ANSI_YELLOW "     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║ " ANSI_GREEN "│\n");
-        printf("│" ANSI_YELLOW "     ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║ " ANSI_GREEN "│\n");
-        printf("│" ANSI_YELLOW "     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝ " ANSI_GREEN "│\n");
-        printf("│" ANSI_BLUE "                 Quip Shell v0.4" ANSI_GREEN "                  │\n");
-        printf("╰─────────────────────────────────────────────────────╯\n");
-        printf(ANSI_RED "★ " ANSI_WHITE "Welcome to " ANSI_GREEN "Quip" ANSI_WHITE " - A modern, enhanced shell experience!\n");
-        printf(ANSI_RED "★ " ANSI_WHITE "Features: Pipes, History, Job Control, Auto-completion, Python Plugins\n");
-        printf(ANSI_RED "★ " ANSI_WHITE "Type '" ANSI_BLUE "help" ANSI_WHITE "' for available commands\n\n" ANSI_RESET);
+        printf(ANSI_DIM "quip " ANSI_ACCENT "v0.4" ANSI_DIM "  \u2014  type " ANSI_BOLD "help" ANSI_DIM " for commands\n" ANSI_RESET);
     }
 
     while (!should_exit_shell()) {
@@ -51,7 +40,7 @@ int main(void) {
     signals_cleanup();
 
     if (isatty(STDIN_FILENO)) {
-        printf(ANSI_RED "★ " ANSI_WHITE "Thank you for using " ANSI_GREEN "Quip" ANSI_WHITE "! Goodbye!\n" ANSI_RESET);
+        printf(ANSI_DIM "quip" ANSI_GRAY " \u2014 goodbye\n" ANSI_RESET);
     }
     return 0;
 }

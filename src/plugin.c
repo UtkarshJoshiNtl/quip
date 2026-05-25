@@ -121,18 +121,17 @@ static int plugin_launch_daemon(void) {
 
     daemon_pid = pid;
 
-    struct timespec ts200 = {0, 200000000L};
-    nanosleep(&ts200, NULL);
-
-    for (int i = 0; i < 10; i++) {
+    int delay = 5;
+    for (int i = 0; i < 20; i++) {
         int fd = plugin_connect();
         if (fd >= 0) {
             close(fd);
             daemon_launched = 1;
             return 0;
         }
-        struct timespec ts100 = {0, 100000000L};
-        nanosleep(&ts100, NULL);
+        struct timespec ts = {0, delay * 1000000L};
+        nanosleep(&ts, NULL);
+        if (delay < 100) delay *= 2;
     }
 
     int status;
@@ -190,6 +189,15 @@ static void write_unescaped(const char *s, size_t slen, FILE *stream) {
     fflush(stream);
 }
 
+static void json_escape(const char *src, char *dst, size_t dstlen) {
+    size_t i = 0;
+    while (*src && i < dstlen - 2) {
+        if (*src == '"' || *src == '\\') dst[i++] = '\\';
+        dst[i++] = *src++;
+    }
+    dst[i] = '\0';
+}
+
 int plugin_exec(char **argv) {
     if (!argv || !argv[0]) return -1;
 
@@ -218,7 +226,9 @@ int plugin_exec(char **argv) {
 
     for (int i = 0; argv[i] != NULL && pos < (int)sizeof(json) - 64; i++) {
         if (i > 0) pos += snprintf(json + pos, sizeof(json) - (size_t)pos, ",");
-        pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "\"%s\"", argv[i]);
+        char escaped[256];
+        json_escape(argv[i], escaped, sizeof(escaped));
+        pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "\"%s\"", escaped);
     }
 
     pos += snprintf(json + pos, sizeof(json) - (size_t)pos,

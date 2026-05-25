@@ -40,7 +40,7 @@ void handle_redirection(char **argv) {
     while (argv[i] != NULL) {
         if (strcmp(argv[i], ">") == 0 || strcmp(argv[i], ">>") == 0) {
             if (argv[i+1] == NULL) {
-                fprintf(stderr, ANSI_RED "quip: missing filename after '%s'\n" ANSI_RESET, argv[i]);
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "missing filename after '%s'\n" ANSI_RESET, argv[i]);
                 i++;
                 continue;
             }
@@ -50,13 +50,13 @@ void handle_redirection(char **argv) {
 
             int fd = open(argv[i+1], flags, 0644);
             if (fd < 0) {
-                fprintf(stderr, ANSI_RED "open failed: %s\n" ANSI_RESET, strerror(errno));
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "open failed: %s\n" ANSI_RESET, strerror(errno));
                 i++;
                 continue;
             }
 
             if (dup2(fd, STDOUT_FILENO) == -1) {
-                fprintf(stderr, ANSI_RED "dup2 failed: %s\n" ANSI_RESET, strerror(errno));
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "dup2 failed: %s\n" ANSI_RESET, strerror(errno));
                 close(fd);
                 i++;
                 continue;
@@ -70,20 +70,20 @@ void handle_redirection(char **argv) {
 
         } else if (strcmp(argv[i], "<") == 0) {
             if (argv[i+1] == NULL) {
-                fprintf(stderr, ANSI_RED "quip: missing filename after '<'\n" ANSI_RESET);
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "missing filename after '<'\n" ANSI_RESET);
                 i++;
                 continue;
             }
 
             int fd = open(argv[i+1], O_RDONLY);
             if (fd < 0) {
-                fprintf(stderr, ANSI_RED "open failed: %s\n" ANSI_RESET, strerror(errno));
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "open failed: %s\n" ANSI_RESET, strerror(errno));
                 i++;
                 continue;
             }
 
             if (dup2(fd, STDIN_FILENO) == -1) {
-                fprintf(stderr, ANSI_RED "dup2 failed: %s\n" ANSI_RESET, strerror(errno));
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "dup2 failed: %s\n" ANSI_RESET, strerror(errno));
                 close(fd);
                 i++;
                 continue;
@@ -119,20 +119,34 @@ void execute_command(char *cmd) {
 
     builtin_func bf = find_builtin(args[0]);
     if (bf) {
+        fflush(stdout);
+        fflush(stderr);
+        int si = dup(STDIN_FILENO), so = dup(STDOUT_FILENO), se = dup(STDERR_FILENO);
+        handle_redirection(args);
         int result = bf(args);
+        if (so >= 0)  { fflush(stdout);  dup2(so, STDOUT_FILENO); close(so); }
+        if (se >= 0)  { fflush(stderr);  dup2(se, STDERR_FILENO); close(se); }
+        if (si >= 0)  { dup2(si, STDIN_FILENO);  close(si); }
         if (result == -1) {
             signal_exit_shell();
         }
         return;
     }
 
-    if (plugin_exec(args) == 0) {
-        return;
+    {
+        fflush(stdout);
+        fflush(stderr);
+        int si = dup(STDIN_FILENO), so = dup(STDOUT_FILENO), se = dup(STDERR_FILENO);
+        int rc = plugin_exec(args);
+        if (so >= 0)  { fflush(stdout);  dup2(so, STDOUT_FILENO); close(so); }
+        if (se >= 0)  { fflush(stderr);  dup2(se, STDERR_FILENO); close(se); }
+        if (si >= 0)  { dup2(si, STDIN_FILENO);  close(si); }
+        if (rc == 0) return;
     }
 
     pid_t pid = fork();
     if (pid < 0) {
-        fprintf(stderr, ANSI_RED "fork failed: %s\n" ANSI_RESET, strerror(errno));
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "fork failed: %s\n" ANSI_RESET, strerror(errno));
         return;
     }
 
@@ -144,16 +158,16 @@ void execute_command(char *cmd) {
 
         handle_redirection(args);
         execvp(args[0], args);
-        fprintf(stderr, ANSI_RED "%s: command not found\n" ANSI_RESET, args[0]);
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "%s: command not found\n" ANSI_RESET, args[0]);
         exit(EXIT_FAILURE);
     } else {
         if (is_background) {
             int job_id = add_job(pid, cmd_copy);
-            printf(ANSI_GREEN "[%d] %d\n" ANSI_RESET, job_id + 1, pid);
+            printf(ANSI_ACCENT "[%d] %d\n" ANSI_RESET, job_id + 1, pid);
         } else {
             int status;
             if (waitpid(pid, &status, 0) == -1) {
-                fprintf(stderr, ANSI_RED "waitpid failed: %s\n" ANSI_RESET, strerror(errno));
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "waitpid failed: %s\n" ANSI_RESET, strerror(errno));
             }
         }
     }
@@ -164,7 +178,7 @@ void execute_line(char *line) {
 
     char *line_copy = strdup(line);
     if (!line_copy) {
-        fprintf(stderr, ANSI_RED "memory allocation failed\n" ANSI_RESET);
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "memory allocation failed\n" ANSI_RESET);
         return;
     }
 
@@ -256,7 +270,7 @@ void execute_pipeline(char **commands) {
 
         if (i < num_commands - 1) {
             if (pipe(pipefd) == -1) {
-                fprintf(stderr, ANSI_RED "pipe failed: %s\n" ANSI_RESET, strerror(errno));
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "pipe failed: %s\n" ANSI_RESET, strerror(errno));
                 cleanup_pipes(num_forked, pids, -1, -1, in_fd);
                 return;
             }
@@ -266,7 +280,7 @@ void execute_pipeline(char **commands) {
 
         pid_t pid = fork();
         if (pid < 0) {
-            fprintf(stderr, ANSI_RED "fork failed: %s\n" ANSI_RESET, strerror(errno));
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "fork failed: %s\n" ANSI_RESET, strerror(errno));
             cleanup_pipes(num_forked, pids,
                             last_pipe_read, last_pipe_write, in_fd);
             return;
@@ -299,15 +313,15 @@ void execute_pipeline(char **commands) {
             if (argc == 0 || cmd_args[0] == NULL)
                 exit(EXIT_FAILURE);
 
+            handle_redirection(cmd_args);
+
             builtin_func bf = find_builtin(cmd_args[0]);
             if (bf) {
                 int result = bf(cmd_args);
                 exit(result == 1 ? 0 : 1);
             }
-
-            handle_redirection(cmd_args);
             execvp(cmd_args[0], cmd_args);
-            fprintf(stderr, ANSI_RED "%s: command not found\n" ANSI_RESET, cmd_args[0]);
+            fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "%s: command not found\n" ANSI_RESET, cmd_args[0]);
             _exit(EXIT_FAILURE);
         } else {
             if (i > 0 && in_fd != STDIN_FILENO) {

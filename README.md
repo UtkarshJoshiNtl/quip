@@ -9,10 +9,15 @@ A lightweight Unix shell written in C with a Python plugin system.
 - Job control: background with `&`, `jobs`, `fg`, `bg`
 - Pipelines: `ls | grep foo | wc -l`
 - I/O redirection: `<`, `>`, `>>`
+- Multiline input: backslash (`\`) continuation and unmatched quote tracking
 - Tab completion for commands and files
 - Python plugins — drop a `.py` file in `~/.config/quip/plugins/`
 - Config file at `~/.config/quip/config`
 - Colored prompt and output
+
+## Screenshots
+
+![quip terminal](screenshots/quip.png)
 
 ## Built-in Commands
 
@@ -43,7 +48,6 @@ A lightweight Unix shell written in C with a Python plugin system.
 make           # release build
 make debug     # with debug symbols
 make clean     # remove build artifacts
-make test      # run tests
 sudo make install  # optional, copies to /usr/local/bin
 ```
 
@@ -100,7 +104,28 @@ history_size = 256
 |-----|---------|-------------|
 | `history_size` | 128 | Max history entries (16-4096) |
 
-## Architecture
+## Further Reading
+
+- **[DESIGN.md](DESIGN.md)** — design rationale: why no libreadline, how the
+  lazy Python daemon works, how builtin redirection saves/restores file
+  descriptors, the backslash-continuation approach, and the fork-exec model.
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — system structure: the REPL loop,
+  command dispatch chain (builtin → plugin → fork+exec), pipeline
+  implementation with N-child fork/pipe, plugin IPC protocol, signal flow,
+  and a worked data-flow example.
+
+### Key Points
+
+| From | Key Takeaway |
+|------|--------------|
+| DESIGN.md | **Zero deps.** The stripped binary is ~39K and starts in ~2ms — no libreadline, no libffi, no JSON library. |
+| DESIGN.md | **Lazy daemon.** The Python plugin process forks on first use, not at shell startup. First plugin call is ~100ms slower; subsequent calls are fast. |
+| DESIGN.md | **Builtin redirection.** Unlike bash, quip must save/restore fds around builtins (`echo > file`), since they run in the shell process rather than a child. |
+| DESIGN.md | **fork+exec.** External commands use `fork()` + `execvp()` for full control over signals and fds in the child. |
+| ARCHITECTURE.md | **Three-stage dispatch.** Every command goes through builtin → plugin → fork+exec in sequence. Redirection is applied at every stage. |
+| ARCHITECTURE.md | **Pipeline plumbing.** N children on N sides of `\|`, each with `pipe()` + `dup2()`. Builtins in pipelines run in child processes like external commands. |
+
+## Source Map
 
 | File | Description |
 |------|-------------|
@@ -126,7 +151,7 @@ history_size = 256
 | Binary size (stripped) | 39K |
 | Startup time | ~2ms |
 | Memory usage | ~1.8 MB RSS |
-| Total lines | 1973 (1738 C, 235 Python) |
+| Total lines | ~2400 (C + Python + docs) |
 
 ### Test Results
 
