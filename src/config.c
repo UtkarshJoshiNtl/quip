@@ -15,7 +15,7 @@ static char config_path[512] = {0};
 static void ensure_dir(const char *path) {
     struct stat st;
     if (stat(path, &st) == -1) {
-        mkdir(path, 0755);
+        mkdir(path, 0777);
     }
 }
 
@@ -26,14 +26,18 @@ static void build_xdg_paths(void) {
 
     if (xdg_config && xdg_config[0]) {
         snprintf(config_path, sizeof(config_path), "%s/quip", xdg_config);
-    } else if (home) {
+    } else if (home && home[0]) {
         snprintf(config_path, sizeof(config_path), "%s/.config/quip", home);
+    } else {
+        snprintf(config_path, sizeof(config_path), "/tmp/quip");
     }
 
     if (xdg_data && xdg_data[0]) {
         snprintf(data_path, sizeof(data_path), "%s/quip", xdg_data);
-    } else if (home) {
+    } else if (home && home[0]) {
         snprintf(data_path, sizeof(data_path), "%s/.local/share/quip", home);
+    } else {
+        snprintf(data_path, sizeof(data_path), "/tmp/quip");
     }
 }
 

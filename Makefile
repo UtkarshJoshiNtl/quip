@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 -std=c17
+CFLAGS = -Wall -Wextra -Werror -O2 -std=c17
 SRC = src/main.c src/config.c src/history.c src/terminal.c src/prompt.c \
       src/builtins.c src/execute.c src/signals.c src/jobs.c src/completion.c \
       src/plugin.c
