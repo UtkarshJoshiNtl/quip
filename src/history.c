@@ -23,7 +23,9 @@ static void history_save_to_disk(void) {
         }
     }
     fclose(f);
-    rename(tmpfile, history_file);
+    if (rename(tmpfile, history_file) != 0) {
+        remove(tmpfile);
+    }
 }
 
 void history_init(void) {
@@ -65,7 +67,7 @@ void history_init(void) {
                 }
                 int idx = (history_head + history_len) % history_max;
                 history[idx] = strdup(line);
-                history_len++;
+                if (history[idx]) history_len++;
             }
             fclose(f);
         }

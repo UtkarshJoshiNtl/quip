@@ -191,9 +191,29 @@ static void write_unescaped(const char *s, size_t slen, FILE *stream) {
 
 static void json_escape(const char *src, char *dst, size_t dstlen) {
     size_t i = 0;
-    while (*src && i < dstlen - 2) {
-        if (*src == '"' || *src == '\\') dst[i++] = '\\';
-        dst[i++] = *src++;
+    while (*src && i < dstlen - 6) {
+        unsigned char c = (unsigned char)*src;
+        switch (c) {
+            case '"':  dst[i++] = '\\'; dst[i++] = '"';  src++; break;
+            case '\\': dst[i++] = '\\'; dst[i++] = '\\'; src++; break;
+            case '\n': dst[i++] = '\\'; dst[i++] = 'n';  src++; break;
+            case '\r': dst[i++] = '\\'; dst[i++] = 'r';  src++; break;
+            case '\t': dst[i++] = '\\'; dst[i++] = 't';  src++; break;
+            case '\b': dst[i++] = '\\'; dst[i++] = 'b';  src++; break;
+            case '\f': dst[i++] = '\\'; dst[i++] = 'f';  src++; break;
+            default:
+                if (c < 0x20) {
+                    if (i < dstlen - 6) {
+                        int n = snprintf(dst + i, dstlen - i, "\\u%04x", c);
+                        if (n > 0) i += (size_t)n;
+                    }
+                    src++;
+                } else {
+                    dst[i++] = c;
+                    src++;
+                }
+                break;
+        }
     }
     dst[i] = '\0';
 }

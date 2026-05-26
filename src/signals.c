@@ -34,6 +34,7 @@ void signals_init(void) {
     signal(SIGQUIT, SIG_IGN);
     signal(SIGCHLD, SIG_DFL);
     signal(SIGTSTP, SIG_IGN);
+    signal(SIGPIPE, SIG_IGN);
 }
 
 void signals_cleanup(void) {
@@ -41,6 +42,7 @@ void signals_cleanup(void) {
     signal(SIGTERM, SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
     signal(SIGTSTP, SIG_DFL);
+    signal(SIGPIPE, SIG_DFL);
 }
 
 void signal_exit_shell(void) {
