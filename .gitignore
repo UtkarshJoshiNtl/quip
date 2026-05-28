@@ -2,3 +2,4 @@ quip
 *.o
 __pycache__/
 *.pyc
+CHANGELOG.md
