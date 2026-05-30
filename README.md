@@ -159,7 +159,11 @@ history_size = 256
 |------|--------|
 | Builtins (cd, pwd, echo, exit, etc.) | Pass |
 | Pipelines (ls \| grep \| wc) | Pass |
+| Plugins in pipelines | Pass |
 | Semicolon chaining | Pass |
+| Semicolons + pipelines (`echo a \| cat; echo b`) | Pass |
+| Quoted pipes / semicolons (`echo "a\|b"` / `echo "a;b"`) | Pass |
+| Plugin I/O redirection (`hello > file`) | Pass |
 | Background jobs | Pass |
 | I/O redirection | Pass |
 | Tab completion | Pass |
