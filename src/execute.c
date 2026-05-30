@@ -137,6 +137,7 @@ void execute_command(char *cmd) {
         fflush(stdout);
         fflush(stderr);
         int si = dup(STDIN_FILENO), so = dup(STDOUT_FILENO), se = dup(STDERR_FILENO);
+        handle_redirection(args);
         int rc = plugin_exec(args);
         if (so >= 0)  { fflush(stdout);  dup2(so, STDOUT_FILENO); close(so); }
         if (se >= 0)  { fflush(stderr);  dup2(se, STDERR_FILENO); close(se); }
@@ -173,6 +174,27 @@ void execute_command(char *cmd) {
     }
 }
 
+static char *strchr_quote_aware(const char *s, int ch) {
+    if (!s) return NULL;
+    while (*s) {
+        if (*s == '\\' && *(s+1)) {
+            s += 2;
+        } else if (*s == '"') {
+            s++;
+            while (*s && *s != '"') {
+                if (*s == '\\' && *(s+1)) s++;
+                s++;
+            }
+            if (*s) s++;
+        } else if (*s == ch) {
+            return (char *)s;
+        } else {
+            s++;
+        }
+    }
+    return NULL;
+}
+
 void execute_line(char *line) {
     if (!line) return;
 
@@ -182,25 +204,34 @@ void execute_line(char *line) {
         return;
     }
 
-    if (strchr(line_copy, '|')) {
-        char *commands[MAX_ARGS];
-        int cmd_count = parse_pipeline(line_copy, commands);
-        if (cmd_count > 1) {
-            execute_pipeline(commands);
-        } else {
-            execute_command(commands[0]);
+    char *p = line_copy;
+    while (p && *p) {
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\0') break;
+
+        char *sc = strchr_quote_aware(p, ';');
+        if (sc) *sc = '\0';
+
+        char *trimmed = p;
+        while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
+
+        if (*trimmed) {
+            if (strchr_quote_aware(trimmed, '|')) {
+                char *commands[MAX_ARGS];
+                int cmd_count = parse_pipeline(trimmed, commands);
+                if (cmd_count > 1) {
+                    execute_pipeline(commands);
+                } else {
+                    execute_command(commands[0]);
+                }
+                for (int i = 0; i < cmd_count; i++)
+                    free(commands[i]);
+            } else {
+                execute_command(trimmed);
+            }
         }
 
-        for (int i = 0; i < cmd_count; i++) {
-            free(commands[i]);
-        }
-    } else {
-        char *saveptr;
-        char *cmd = strtok_r(line_copy, ";", &saveptr);
-        while (cmd != NULL) {
-            execute_command(cmd);
-            cmd = strtok_r(NULL, ";", &saveptr);
-        }
+        p = sc ? sc + 1 : NULL;
     }
 
     free(line_copy);
@@ -210,26 +241,47 @@ int parse_pipeline(char *line, char **commands) {
     if (!line || !commands) return 0;
 
     int count = 0;
-    char *saveptr;
-    char *token = strtok_r(line, "|", &saveptr);
+    char *p = line;
 
-    while (token != NULL && count < MAX_ARGS - 1) {
-        while (*token == ' ' || *token == '\t') token++;
+    while (*p && count < MAX_ARGS - 1) {
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '\0') break;
 
-        if (*token != '\0') {
-            char *end = token + strlen(token) - 1;
-            while (end > token && (*end == ' ' || *end == '\t')) end--;
-            *(end + 1) = '\0';
+        char *start = p;
 
-            commands[count] = strdup(token);
-            if (commands[count] == NULL) {
+        while (*p) {
+            if (*p == '\\' && *(p+1)) {
+                p += 2;
+            } else if (*p == '"') {
+                p++;
+                while (*p && *p != '"') {
+                    if (*p == '\\' && *(p+1)) p++;
+                    p++;
+                }
+                if (*p) p++;
+            } else if (*p == '|') {
+                break;
+            } else {
+                p++;
+            }
+        }
+
+        char *end = p;
+        while (end > start && (*(end-1) == ' ' || *(end-1) == '\t')) end--;
+
+        if (end > start) {
+            size_t len = (size_t)(end - start);
+            commands[count] = malloc(len + 1);
+            if (!commands[count]) {
                 for (int i = 0; i < count; i++) free(commands[i]);
                 return 0;
             }
+            memcpy(commands[count], start, len);
+            commands[count][len] = '\0';
             count++;
         }
 
-        token = strtok_r(NULL, "|", &saveptr);
+        if (*p == '|') p++;
     }
 
     commands[count] = NULL;
@@ -320,6 +372,8 @@ void execute_pipeline(char **commands) {
                 int result = bf(cmd_args);
                 exit(result == 1 ? 0 : 1);
             }
+            if (plugin_exec(cmd_args) == 0)
+                _exit(0);
             execvp(cmd_args[0], cmd_args);
             fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "%s: command not found\n" ANSI_RESET, cmd_args[0]);
             _exit(EXIT_FAILURE);

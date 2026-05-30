@@ -286,7 +286,7 @@ int plugin_exec(char **argv) {
         const char *out = strstr(p, "\"stdout\": ");
         if (!out) out = strstr(p, "\"stdout\":\"");
         if (out) {
-            out += (out[9] == ' ') ? 10 : 9;
+            out += (out[9] == ' ') ? 11 : 10;
             const char *end = strchr(out, '"');
             if (end && end > out)
                 write_unescaped(out, (size_t)(end - out), stdout);
@@ -295,7 +295,7 @@ int plugin_exec(char **argv) {
         const char *err = strstr(p, "\"stderr\": ");
         if (!err) err = strstr(p, "\"stderr\":\"");
         if (err) {
-            err += (err[9] == ' ') ? 10 : 9;
+            err += (err[9] == ' ') ? 11 : 10;
             const char *end = strchr(err, '"');
             if (end && end > err)
                 write_unescaped(err, (size_t)(end - err), stderr);
