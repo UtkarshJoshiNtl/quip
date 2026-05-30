@@ -80,19 +80,35 @@ Redirection (`handle_redirection()`) is applied at each stage:
 echo hello | tr a-z A-Z | wc -c
 ```
 
-1. `parse_pipeline()` splits on `|`, returning N command strings.
+1. `parse_pipeline()` splits on `|` (quote-aware — `|` inside `"..."` is
+   treated as a literal), returning N command strings.
 2. For each command `i` (0 .. N-1):
    - If not last: `pipe()` creates a new channel.
    - `fork()` a child.
    - Child: `dup2()` read-end from previous pipe (if `i > 0`), `dup2()`
      write-end to current pipe (if `i < N-1`), then
-     `handle_redirection()` + `find_builtin()` / `execvp()`.
+     `handle_redirection()` + `find_builtin()` / `plugin_exec()` /
+     `execvp()`.
    - Parent: closes its copy of the pipe ends, records the PID.
 3. Parent waits for all children via `waitpid()`.
 
-This means builtins in the middle of a pipeline (`echo hello | cat`) run in
-a child process, with their stdin/stdout connected to pipes. Redirection
-is applied after pipe setup, so `echo hello | cat > file` works correctly.
+This means builtins and plugins in the middle of a pipeline
+(`echo hello | cat`) run in a child process, with their stdin/stdout
+connected to pipes. Redirection is applied after pipe setup, so
+`echo hello | cat > file` works correctly.
+
+## Command Separation
+
+`execute_line()` in `execute.c` splits the input line into commands using
+a two-phase approach, both quote-aware (`;` and `|` inside `"..."` are
+treated as literals):
+
+1. **Split by `;`** — each segment is a sequential command or pipeline.
+2. **Per segment, check for `|`** — if found, dispatch to
+   `execute_pipeline()`; otherwise, `execute_command()`.
+
+This ensures `echo a | cat; echo b` runs both sides correctly: the
+pipeline completes first, then the standalone `echo b`.
 
 ## Plugin IPC Protocol
 
@@ -146,7 +162,9 @@ Command: `echo hello | wc -c > out`
 main.c: read_line() ── "echo hello | wc -c > out"
                           |
 execute_line()             |
-  ├─ strchr('|') found    |
+  ├─ no ';' found         |
+  │   (quote-aware scan)  |
+  ├─ strchr_qa('|') found |
   │   └─ parse_pipeline() ── ["echo hello", "wc -c > out"]
   │       └─ execute_pipeline()
   │           ├─ fork child 0
@@ -165,6 +183,7 @@ execute_line()             |
   │           │       └─ dup2(fd, STDOUT_FILENO)
   │           │       └─ argv → ["wc","-c"]
   │           │   └─ find_builtin("wc") → NULL
+  │           │   └─ plugin_exec(["wc","-c"]) → not a plugin
   │           │   └─ execvp("wc", ["wc","-c"])
   │           │       └─ wc reads "hello\n" from stdin
   │           │       └─ wc writes "6\n" to stdout → file "out"
