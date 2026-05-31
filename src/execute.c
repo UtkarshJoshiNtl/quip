@@ -51,14 +51,20 @@ void handle_redirection(char **argv) {
             int fd = open(argv[i+1], flags, 0644);
             if (fd < 0) {
                 fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "open failed: %s\n" ANSI_RESET, strerror(errno));
-                i++;
+                int j = i + 2;
+                while (argv[j] != NULL) j++;
+                if (i <= j)
+                    memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
                 continue;
             }
 
             if (dup2(fd, STDOUT_FILENO) == -1) {
                 fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "dup2 failed: %s\n" ANSI_RESET, strerror(errno));
                 close(fd);
-                i++;
+                int j = i + 2;
+                while (argv[j] != NULL) j++;
+                if (i <= j)
+                    memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
                 continue;
             }
 
@@ -78,14 +84,20 @@ void handle_redirection(char **argv) {
             int fd = open(argv[i+1], O_RDONLY);
             if (fd < 0) {
                 fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "open failed: %s\n" ANSI_RESET, strerror(errno));
-                i++;
+                int j = i + 2;
+                while (argv[j] != NULL) j++;
+                if (i <= j)
+                    memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
                 continue;
             }
 
             if (dup2(fd, STDIN_FILENO) == -1) {
                 fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "dup2 failed: %s\n" ANSI_RESET, strerror(errno));
                 close(fd);
-                i++;
+                int j = i + 2;
+                while (argv[j] != NULL) j++;
+                if (i <= j)
+                    memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
                 continue;
             }
 
