@@ -33,12 +33,25 @@ static int plugin_connect(void) {
     return fd;
 }
 
+static int write_all(int fd, const void *buf, size_t count) {
+    const char *p = buf;
+    size_t remaining = count;
+    while (remaining > 0) {
+        ssize_t n = write(fd, p, remaining);
+        if (n <= 0) return -1;
+        p += n;
+        remaining -= (size_t)n;
+    }
+    return 0;
+}
+
 static int plugin_send(int fd, const char *json) {
     if (fd < 0) return -1;
 
-    uint32_t len = htonl((uint32_t)strlen(json));
-    if (write(fd, &len, 4) < 0) return -1;
-    if (write(fd, json, strlen(json)) < 0) return -1;
+    size_t json_len = strlen(json);
+    uint32_t len = htonl((uint32_t)json_len);
+    if (write_all(fd, &len, 4) < 0) return -1;
+    if (write_all(fd, json, json_len) < 0) return -1;
     return 0;
 }
 
