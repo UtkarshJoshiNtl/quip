@@ -189,6 +189,15 @@ static void write_unescaped(const char *s, size_t slen, FILE *stream) {
     fflush(stream);
 }
 
+static const char *json_str_end(const char *s) {
+    while (*s) {
+        if (*s == '\\' && *(s+1)) s += 2;
+        else if (*s == '"') return s;
+        else s++;
+    }
+    return NULL;
+}
+
 static void json_escape(const char *src, char *dst, size_t dstlen) {
     size_t i = 0;
     while (*src && i < dstlen - 6) {
@@ -251,6 +260,10 @@ int plugin_exec(char **argv) {
         pos += snprintf(json + pos, sizeof(json) - (size_t)pos, "\"%s\"", escaped);
     }
 
+    if (pos < 0 || (size_t)pos >= sizeof(json)) {
+        close(fd);
+        return -1;
+    }
     pos += snprintf(json + pos, sizeof(json) - (size_t)pos,
         "],\"cwd\":\"%s\"}", cwd);
 
@@ -287,7 +300,7 @@ int plugin_exec(char **argv) {
         if (!out) out = strstr(p, "\"stdout\":\"");
         if (out) {
             out += (out[9] == ' ') ? 11 : 10;
-            const char *end = strchr(out, '"');
+            const char *end = json_str_end(out);
             if (end && end > out)
                 write_unescaped(out, (size_t)(end - out), stdout);
         }
@@ -296,7 +309,7 @@ int plugin_exec(char **argv) {
         if (!err) err = strstr(p, "\"stderr\":\"");
         if (err) {
             err += (err[9] == ' ') ? 11 : 10;
-            const char *end = strchr(err, '"');
+            const char *end = json_str_end(err);
             if (end && end > err)
                 write_unescaped(err, (size_t)(end - err), stderr);
         }

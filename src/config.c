@@ -14,8 +14,10 @@ static char config_path[512] = {0};
 
 static void ensure_dir(const char *path) {
     struct stat st;
-    if (stat(path, &st) == -1) {
-        mkdir(path, 0777);
+    if (stat(path, &st) == -1 && errno == ENOENT) {
+        if (mkdir(path, 0755) == -1) {
+            fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "mkdir(%s): %s\n" ANSI_RESET, path, strerror(errno));
+        }
     }
 }
 
@@ -108,7 +110,8 @@ int config_get_int(const char *key, int default_val) {
     const char *val = config_get(key);
     if (!val) return default_val;
     char *end;
+    errno = 0;
     long result = strtol(val, &end, 10);
-    if (*end != '\0' || result < 0) return default_val;
+    if (errno == ERANGE || *end != '\0' || result < 0) return default_val;
     return (int)result;
 }

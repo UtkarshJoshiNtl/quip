@@ -14,7 +14,7 @@ static int builtin_commands_lookup(const char *name) {
     return 0;
 }
 
-static int count_matches(const char *prefix, const char **matches, int max_matches) {
+static int count_matches(const char *prefix, char **matches, int max_matches) {
     int count = 0;
     size_t plen = strlen(prefix);
 
@@ -49,7 +49,7 @@ static int count_matches(const char *prefix, const char **matches, int max_match
     return count;
 }
 
-static const char *find_longest_common_prefix(const char **matches, int count) {
+static const char *find_longest_common_prefix(char **matches, int count) {
     if (count == 0) return NULL;
     if (count == 1) return matches[0];
 
@@ -84,11 +84,12 @@ static const char *find_longest_common_prefix(const char **matches, int count) {
 void handle_completion(char *buf, int *pos, int *len) {
     if (*pos == 0) return;
 
+    int copy_len = *pos < MAX_LINE ? *pos : MAX_LINE - 1;
     char prefix[MAX_LINE];
-    strncpy(prefix, buf, *pos);
-    prefix[*pos] = '\0';
+    strncpy(prefix, buf, copy_len);
+    prefix[copy_len] = '\0';
 
-    const char *matches[MAX_ARGS];
+    char *matches[MAX_ARGS];
     int raw_count = count_matches(prefix, matches, MAX_ARGS);
     int match_count = raw_count < MAX_ARGS ? raw_count : MAX_ARGS;
 
@@ -111,7 +112,7 @@ void handle_completion(char *buf, int *pos, int *len) {
         }
 
         for (int i = 0; i < match_count; i++)
-            free((char *)matches[i]);
+            free(matches[i]);
 
     } else {
         const char *common_prefix = find_longest_common_prefix(matches, match_count);
@@ -147,6 +148,6 @@ void handle_completion(char *buf, int *pos, int *len) {
         }
 
         for (int i = 0; i < match_count; i++)
-            free((char *)matches[i]);
+            free(matches[i]);
     }
 }
