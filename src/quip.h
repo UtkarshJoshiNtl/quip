@@ -14,7 +14,6 @@
 
 #define MAX_LINE      4096
 #define MAX_ARGS       64
-#define MAX_HISTORY   128
 
 #define ANSI_ACCENT  "\033[38;5;214m"
 #define ANSI_GRAY    "\033[38;5;255m"

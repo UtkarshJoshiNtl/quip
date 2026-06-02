@@ -88,10 +88,6 @@ int builtin_fg(char **argv) {
         return 0;
     }
     int job_id = (int)(raw - 1);
-    if (job_id < 0 || job_id >= job_count) {
-        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "fg: invalid job ID\n" ANSI_RESET);
-        return 0;
-    }
 
     pid_t pid = jobs[job_id].pid;
 
@@ -123,10 +119,6 @@ int builtin_bg(char **argv) {
         return 0;
     }
     int job_id = (int)(raw - 1);
-    if (job_id < 0 || job_id >= job_count) {
-        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "bg: invalid job ID\n" ANSI_RESET);
-        return 0;
-    }
 
     pid_t pid = jobs[job_id].pid;
 

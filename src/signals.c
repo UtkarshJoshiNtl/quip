@@ -54,9 +54,7 @@ int should_exit_shell(void) {
 }
 
 int was_sigint_received(void) {
-    if (sigint_received) {
-        sigint_received = 0;
-        return 1;
-    }
-    return 0;
+    int ret = sigint_received;
+    if (ret) sigint_received = 0;
+    return ret;
 }

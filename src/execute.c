@@ -66,7 +66,7 @@ void handle_redirection(char **argv) {
             int j = i + 2;
             while (argv[j] != NULL) j++;
             if (i <= j)
-                memmove(&argv[i], &argv[i+2], (j - i + 1) * sizeof(char *));
+                memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
 
         } else if (strcmp(argv[i], "<") == 0) {
             if (argv[i+1] == NULL) {
@@ -93,7 +93,7 @@ void handle_redirection(char **argv) {
             int j = i + 2;
             while (argv[j] != NULL) j++;
             if (i <= j)
-                memmove(&argv[i], &argv[i+2], (j - i + 1) * sizeof(char *));
+                memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
 
         } else {
             i++;

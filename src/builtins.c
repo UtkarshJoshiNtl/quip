@@ -93,7 +93,7 @@ int builtin_env(char **argv) {
     return 1;
 }
 
-struct builtin builtins[] = {
+static struct builtin builtins[] = {
     { "cd",      builtin_cd      },
     { "pwd",     builtin_pwd     },
     { "help",    builtin_help    },

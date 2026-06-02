@@ -1,4 +1,5 @@
 #include "quip.h"
+#include <poll.h>
 
 static char comline[MAX_LINE];
 
@@ -117,7 +118,10 @@ int read_line(char *buffer, size_t size) {
 
         if (c == '\x1b') {
             char seq[2];
+            struct pollfd pfd = { .fd = STDIN_FILENO, .events = POLLIN };
+            if (poll(&pfd, 1, 200) <= 0) continue;
             if (read(STDIN_FILENO, &seq[0], 1) <= 0) continue;
+            if (poll(&pfd, 1, 200) <= 0) continue;
             if (read(STDIN_FILENO, &seq[1], 1) <= 0) continue;
 
             if (seq[0] == '[') {
