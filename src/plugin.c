@@ -112,7 +112,7 @@ static int plugin_launch_daemon(void) {
             if (slash) {
                 *slash = '\0';
                 snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-                         "/../python/quip_daemon.py");
+                         "/python/quip_daemon.py");
                 if (access(buf, F_OK) == 0)
                     daemon_path = buf;
             }

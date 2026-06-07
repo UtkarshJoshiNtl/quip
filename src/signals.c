@@ -21,14 +21,15 @@ void signals_init(void) {
 
     sa.sa_handler = signal_handler;
     sigemptyset(&sa.sa_mask);
+
     sa.sa_flags = SA_RESTART;
-
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "sigaction SIGINT failed: %s\n" ANSI_RESET, strerror(errno));
-    }
-
     if (sigaction(SIGTERM, &sa, NULL) == -1) {
         fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "sigaction SIGTERM failed: %s\n" ANSI_RESET, strerror(errno));
+    }
+
+    sa.sa_flags = 0;
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "sigaction SIGINT failed: %s\n" ANSI_RESET, strerror(errno));
     }
 
     signal(SIGQUIT, SIG_IGN);

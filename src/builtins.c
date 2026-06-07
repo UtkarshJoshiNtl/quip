@@ -70,7 +70,7 @@ int builtin_exit(char **argv) {
 
 int builtin_clear(char **argv) {
     (void)argv;
-    printf("\033[H\033[J");
+    printf("\033[H\033[2J");
     fflush(stdout);
     return 1;
 }
