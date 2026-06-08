@@ -17,7 +17,7 @@ A lightweight Unix shell written in C with a Python plugin system.
 
 ## Screenshot
 
-![quip terminal](screenshots/quip.png.png)
+![quip terminal](screenshots/quip.png)
 
 ## Built-in Commands
 

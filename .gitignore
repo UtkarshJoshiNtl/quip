@@ -3,3 +3,6 @@ quip
 __pycache__/
 *.pyc
 CHANGELOG.md
+graphify-out/
+.vscode/
+AGENTS.md
