@@ -12,8 +12,10 @@ int parse_command_line(char *line, char **argv) {
             p++;
             argv[argc++] = p;
             while (*p && *p != '"') {
-                if (*p == '\\' && *(p+1))
-                    memmove(p, p+1, strlen(p));
+                if (*p == '\\' && *(p+1)) {
+                    size_t rest = strlen(p + 1);
+                    memmove(p, p+1, rest + 1);
+                }
                 p++;
             }
             if (*p) *p++ = '\0';
@@ -21,7 +23,8 @@ int parse_command_line(char *line, char **argv) {
             argv[argc++] = p;
             while (*p && *p != ' ' && *p != '\n') {
                 if (*p == '\\' && *(p+1)) {
-                    memmove(p, p+1, strlen(p));
+                    size_t rest = strlen(p + 1);
+                    memmove(p, p+1, rest + 1);
                 } else {
                     p++;
                 }
@@ -32,6 +35,13 @@ int parse_command_line(char *line, char **argv) {
 
     argv[argc] = NULL;
     return argc;
+}
+
+static void remove_redirect_args(char **argv, int i) {
+    int j = i + 2;
+    while (argv[j] != NULL) j++;
+    if (i <= j)
+        memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
 }
 
 void handle_redirection(char **argv) {
@@ -52,28 +62,19 @@ void handle_redirection(char **argv) {
             int fd = open(argv[i+1], flags, 0644);
             if (fd < 0) {
                 fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "open failed: %s\n" ANSI_RESET, strerror(errno));
-                int j = i + 2;
-                while (argv[j] != NULL) j++;
-                if (i <= j)
-                    memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
+                remove_redirect_args(argv, i);
                 continue;
             }
 
             if (dup2(fd, STDOUT_FILENO) == -1) {
                 fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "dup2 failed: %s\n" ANSI_RESET, strerror(errno));
                 close(fd);
-                int j = i + 2;
-                while (argv[j] != NULL) j++;
-                if (i <= j)
-                    memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
+                remove_redirect_args(argv, i);
                 continue;
             }
 
             close(fd);
-            int j = i + 2;
-            while (argv[j] != NULL) j++;
-            if (i <= j)
-                memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
+            remove_redirect_args(argv, i);
 
         } else if (strcmp(argv[i], "<") == 0) {
             if (argv[i+1] == NULL) {
@@ -85,28 +86,19 @@ void handle_redirection(char **argv) {
             int fd = open(argv[i+1], O_RDONLY);
             if (fd < 0) {
                 fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "open failed: %s\n" ANSI_RESET, strerror(errno));
-                int j = i + 2;
-                while (argv[j] != NULL) j++;
-                if (i <= j)
-                    memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
+                remove_redirect_args(argv, i);
                 continue;
             }
 
             if (dup2(fd, STDIN_FILENO) == -1) {
                 fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "dup2 failed: %s\n" ANSI_RESET, strerror(errno));
                 close(fd);
-                int j = i + 2;
-                while (argv[j] != NULL) j++;
-                if (i <= j)
-                    memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
+                remove_redirect_args(argv, i);
                 continue;
             }
 
             close(fd);
-            int j = i + 2;
-            while (argv[j] != NULL) j++;
-            if (i <= j)
-                memmove(&argv[i], &argv[i+2], (j - i - 1) * sizeof(char *));
+            remove_redirect_args(argv, i);
 
         } else {
             i++;
@@ -135,7 +127,8 @@ void execute_command(char *cmd) {
         fflush(stdout);
         fflush(stderr);
         int si = dup(STDIN_FILENO), so = dup(STDOUT_FILENO), se = dup(STDERR_FILENO);
-        handle_redirection(args);
+        if (si >= 0 && so >= 0 && se >= 0)
+            handle_redirection(args);
         int result = bf(args);
         if (so >= 0)  { fflush(stdout);  dup2(so, STDOUT_FILENO); close(so); }
         if (se >= 0)  { fflush(stderr);  dup2(se, STDERR_FILENO); close(se); }
@@ -150,7 +143,8 @@ void execute_command(char *cmd) {
         fflush(stdout);
         fflush(stderr);
         int si = dup(STDIN_FILENO), so = dup(STDOUT_FILENO), se = dup(STDERR_FILENO);
-        handle_redirection(args);
+        if (si >= 0 && so >= 0 && se >= 0)
+            handle_redirection(args);
         int rc = plugin_exec(args);
         if (so >= 0)  { fflush(stdout);  dup2(so, STDOUT_FILENO); close(so); }
         if (se >= 0)  { fflush(stderr);  dup2(se, STDERR_FILENO); close(se); }
@@ -234,7 +228,7 @@ void execute_line(char *line) {
                 int cmd_count = parse_pipeline(trimmed, commands);
                 if (cmd_count > 1) {
                     execute_pipeline(commands);
-                } else {
+                } else if (cmd_count == 1) {
                     execute_command(commands[0]);
                 }
                 for (int i = 0; i < cmd_count; i++)
@@ -383,7 +377,7 @@ void execute_pipeline(char **commands) {
             builtin_func bf = find_builtin(cmd_args[0]);
             if (bf) {
                 int result = bf(cmd_args);
-                exit(result == 1 ? 0 : 1);
+                _exit(result == 1 ? 0 : 1);
             }
             if (plugin_exec(cmd_args) == 0)
                 _exit(0);
