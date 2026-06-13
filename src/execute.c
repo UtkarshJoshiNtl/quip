@@ -167,7 +167,7 @@ void execute_command(char *cmd) {
         handle_redirection(args);
         execvp(args[0], args);
         fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "%s: command not found\n" ANSI_RESET, args[0]);
-        exit(EXIT_FAILURE);
+        _exit(EXIT_FAILURE);
     } else {
         if (is_background) {
             int job_id = add_job(pid, cmd_copy);
@@ -370,7 +370,7 @@ void execute_pipeline(char **commands) {
             int argc = parse_command_line(commands[i], cmd_args);
 
             if (argc == 0 || cmd_args[0] == NULL)
-                exit(EXIT_FAILURE);
+                _exit(EXIT_FAILURE);
 
             handle_redirection(cmd_args);
 

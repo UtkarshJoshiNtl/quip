@@ -317,8 +317,10 @@ int plugin_exec(char **argv) {
         close(fd);
         return -1;
     }
+    char escaped_cwd[2048];
+    json_escape(cwd, escaped_cwd, sizeof(escaped_cwd));
     pos += snprintf(json + pos, sizeof(json) - (size_t)pos,
-        "],\"cwd\":\"%s\"}", cwd);
+        "],\"cwd\":\"%s\"}", escaped_cwd);
 
     if (plugin_send(fd, json) < 0) {
         close(fd);
