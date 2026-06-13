@@ -2,34 +2,29 @@
 
 int parse_command_line(char *line, char **argv) {
     int argc = 0;
-    char *p = line;
+    char *r = line, *w = line;
 
-    while (*p && argc < MAX_ARGS - 1) {
-        while (*p == ' ' || *p == '\n') p++;
-        if (*p == '\0') break;
+    while (*r && argc < MAX_ARGS - 1) {
+        while (*r == ' ' || *r == '\n') r++;
+        if (*r == '\0') break;
 
-        if (*p == '"') {
-            p++;
-            argv[argc++] = p;
-            while (*p && *p != '"') {
-                if (*p == '\\' && *(p+1)) {
-                    size_t rest = strlen(p + 1);
-                    memmove(p, p+1, rest + 1);
-                }
-                p++;
+        if (*r == '"') {
+            r++;
+            argv[argc++] = w;
+            while (*r && *r != '"') {
+                if (*r == '\\' && *(r+1)) r++;
+                *w++ = *r++;
             }
-            if (*p) *p++ = '\0';
+            if (*r) r++;
+            *w++ = '\0';
         } else {
-            argv[argc++] = p;
-            while (*p && *p != ' ' && *p != '\n') {
-                if (*p == '\\' && *(p+1)) {
-                    size_t rest = strlen(p + 1);
-                    memmove(p, p+1, rest + 1);
-                } else {
-                    p++;
-                }
+            argv[argc++] = w;
+            while (*r && *r != ' ' && *r != '\n') {
+                if (*r == '\\' && *(r+1)) r++;
+                *w++ = *r++;
             }
-            if (*p) *p++ = '\0';
+            if (*r) r++;
+            *w++ = '\0';
         }
     }
 
