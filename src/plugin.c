@@ -181,6 +181,13 @@ int plugin_available(void) {
     return count > 0;
 }
 
+static int hex_val(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
 static void write_unescaped(const char *s, size_t slen, FILE *stream) {
     for (size_t i = 0; i < slen; i++) {
         if (s[i] == '\\' && i + 1 < slen) {
@@ -193,6 +200,37 @@ static void write_unescaped(const char *s, size_t slen, FILE *stream) {
                 case '/': fputc('/', stream); i++; break;
                 case '\\': fputc('\\', stream); i++; break;
                 case '"': fputc('"', stream); i++; break;
+                case 'u':
+                    if (i + 5 < slen) {
+                        int cp = 0;
+                        int ok = 1;
+                        for (int k = 0; k < 4; k++) {
+                            int v = hex_val(s[i+2+k]);
+                            if (v < 0) { ok = 0; break; }
+                            cp = (cp << 4) | v;
+                        }
+                        if (ok && cp <= 0x10FFFF) {
+                            if (cp <= 0x7F) {
+                                fputc(cp, stream);
+                            } else if (cp <= 0x7FF) {
+                                fputc(0xC0 | (cp >> 6), stream);
+                                fputc(0x80 | (cp & 0x3F), stream);
+                            } else if (cp <= 0xFFFF) {
+                                fputc(0xE0 | (cp >> 12), stream);
+                                fputc(0x80 | ((cp >> 6) & 0x3F), stream);
+                                fputc(0x80 | (cp & 0x3F), stream);
+                            } else {
+                                fputc(0xF0 | (cp >> 18), stream);
+                                fputc(0x80 | ((cp >> 15) & 0x3F), stream);
+                                fputc(0x80 | ((cp >> 6) & 0x3F), stream);
+                                fputc(0x80 | (cp & 0x3F), stream);
+                            }
+                            i += 5;
+                            break;
+                        }
+                    }
+                    fputc(s[i], stream);
+                    break;
                 default: fputc(s[i], stream); break;
             }
         } else {
@@ -263,8 +301,10 @@ int plugin_exec(char **argv) {
     }
 
     char json[8192];
+    char escaped_plugin[256];
+    json_escape(argv[0], escaped_plugin, sizeof(escaped_plugin));
     int pos = snprintf(json, sizeof(json),
-        "{\"type\":\"exec\",\"plugin\":\"%s\",\"argv\":[", argv[0]);
+        "{\"type\":\"exec\",\"plugin\":\"%s\",\"argv\":[", escaped_plugin);
 
     for (int i = 0; argv[i] != NULL && pos < (int)sizeof(json) - 64; i++) {
         if (i > 0) pos += snprintf(json + pos, sizeof(json) - (size_t)pos, ",");
