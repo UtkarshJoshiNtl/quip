@@ -50,14 +50,13 @@ void history_init(void) {
             char line[MAX_LINE];
             while (fgets(line, sizeof(line), f)) {
                 size_t len = strlen(line);
-                if (len > 0 && line[len-1] != '\n' && !feof(f)) {
-                    int ch;
-                    while ((ch = fgetc(f)) != EOF && ch != '\n');
-                    continue;
-                }
                 while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r'))
                     line[--len] = '\0';
                 if (len == 0) continue;
+                if (len == sizeof(line) - 1 && line[sizeof(line) - 2] != '\n') {
+                    int ch;
+                    while ((ch = fgetc(f)) != EOF && ch != '\n');
+                }
 
                 if (history_len >= history_max) {
                     free(history[history_head]);

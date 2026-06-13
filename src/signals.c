@@ -55,7 +55,12 @@ int should_exit_shell(void) {
 }
 
 int was_sigint_received(void) {
+    sigset_t block, old;
+    sigemptyset(&block);
+    sigaddset(&block, SIGINT);
+    sigprocmask(SIG_BLOCK, &block, &old);
     int ret = sigint_received;
     if (ret) sigint_received = 0;
+    sigprocmask(SIG_SETMASK, &old, NULL);
     return ret;
 }
