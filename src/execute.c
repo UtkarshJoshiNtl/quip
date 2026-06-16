@@ -5,7 +5,7 @@ int parse_command_line(char *line, char **argv) {
     char *r = line, *w = line;
 
     while (*r && argc < MAX_ARGS - 1) {
-        while (*r == ' ' || *r == '\n') r++;
+        while (*r == ' ' || *r == '\t' || *r == '\n') r++;
         if (*r == '\0') break;
 
         if (*r == '"') {
@@ -19,7 +19,7 @@ int parse_command_line(char *line, char **argv) {
             *w++ = '\0';
         } else {
             argv[argc++] = w;
-            while (*r && *r != ' ' && *r != '\n') {
+            while (*r && *r != ' ' && *r != '\t' && *r != '\n') {
                 if (*r == '\\' && *(r+1)) r++;
                 *w++ = *r++;
             }
