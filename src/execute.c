@@ -158,6 +158,7 @@ void execute_command(char *cmd) {
         signal(SIGTERM, SIG_DFL);
         signal(SIGCHLD, SIG_DFL);
         signal(SIGTSTP, SIG_DFL);
+        signal(SIGPIPE, SIG_DFL);
 
         handle_redirection(args);
         execvp(args[0], args);
@@ -347,6 +348,7 @@ void execute_pipeline(char **commands) {
             signal(SIGTERM, SIG_DFL);
             signal(SIGCHLD, SIG_DFL);
             signal(SIGTSTP, SIG_DFL);
+            signal(SIGPIPE, SIG_DFL);
 
             if (i > 0) {
                 if (dup2(in_fd, STDIN_FILENO) == -1)
