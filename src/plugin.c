@@ -305,6 +305,7 @@ int plugin_exec(char **argv) {
     json_escape(argv[0], escaped_plugin, sizeof(escaped_plugin));
     int pos = snprintf(json, sizeof(json),
         "{\"type\":\"exec\",\"plugin\":\"%s\",\"argv\":[", escaped_plugin);
+    if (pos < 0) { close(fd); return -1; }
 
     for (int i = 0; argv[i] != NULL && pos < (int)sizeof(json) - 64; i++) {
         if (i > 0) pos += snprintf(json + pos, sizeof(json) - (size_t)pos, ",");
