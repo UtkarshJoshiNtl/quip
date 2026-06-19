@@ -384,6 +384,7 @@ void execute_pipeline(char **commands) {
         } else {
             if (i > 0 && in_fd != STDIN_FILENO) {
                 close(in_fd);
+                in_fd = -1;
             }
 
             if (i < num_commands - 1) {
@@ -398,7 +399,7 @@ void execute_pipeline(char **commands) {
         waitpid(pids[i], &status, 0);
     }
 
-    if (in_fd != STDIN_FILENO) {
+    if (in_fd >= 0 && in_fd != STDIN_FILENO) {
         close(in_fd);
     }
 }
