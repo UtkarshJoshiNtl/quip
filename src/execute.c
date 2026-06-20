@@ -295,7 +295,7 @@ static void cleanup_pipes(int nfds, pid_t *pids, int rfd, int wfd, int infd) {
     if (infd >= 0 && infd != STDIN_FILENO && infd != STDOUT_FILENO) close(infd);
 
     for (int i = 0; i < nfds; i++) {
-        if (pids[i] > 0) waitpid(pids[i], NULL, 0);
+        if (pids[i] > 0) waitpid(pids[i], NULL, WNOHANG);
     }
 }
 
