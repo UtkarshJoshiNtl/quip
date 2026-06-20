@@ -1,5 +1,6 @@
 #include "quip.h"
 #include <sys/stat.h>
+#include <limits.h>
 
 typedef struct {
     char key[CONFIG_KEY_LEN];
@@ -112,6 +113,6 @@ int config_get_int(const char *key, int default_val) {
     char *end;
     errno = 0;
     long result = strtol(val, &end, 10);
-    if (errno == ERANGE || *end != '\0' || result < 0) return default_val;
+    if (errno == ERANGE || *end != '\0' || result < 0 || result > INT_MAX) return default_val;
     return (int)result;
 }
