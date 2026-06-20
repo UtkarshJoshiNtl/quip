@@ -138,12 +138,10 @@ void execute_command(char *cmd) {
         fflush(stdout);
         fflush(stderr);
         int si = dup(STDIN_FILENO), so = dup(STDOUT_FILENO), se = dup(STDERR_FILENO);
-        if (si >= 0 && so >= 0 && se >= 0)
-            handle_redirection(args);
         int rc = plugin_exec(args);
-        if (so >= 0)  { fflush(stdout);  dup2(so, STDOUT_FILENO); close(so); }
-        if (se >= 0)  { fflush(stderr);  dup2(se, STDERR_FILENO); close(se); }
-        if (si >= 0)  { dup2(si, STDIN_FILENO);  close(si); }
+        if (si >= 0) close(si);
+        if (so >= 0) close(so);
+        if (se >= 0) close(se);
         if (rc == 0) return;
     }
 
