@@ -88,7 +88,7 @@ int read_line(char *buffer, size_t size) {
             if (!cont) {
                 int q = 0;
                 for (int i = 0; i < len; i++)
-                    if (buf[i] == '"') q++;
+                    if (buf[i] == '"' && (i == 0 || buf[i-1] != '\\')) q++;
                 if (q & 1) cont = 1;
             }
 
