@@ -383,7 +383,7 @@ void plugin_cleanup(void) {
     }
     if (daemon_pid > 0) {
         int status;
-        waitpid(daemon_pid, &status, 0);
+        waitpid(daemon_pid, &status, WNOHANG);
         daemon_pid = -1;
     }
 }
