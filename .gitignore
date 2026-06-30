@@ -1,4 +1,6 @@
 quip
+quip_asan
+quip_ubsan
 *.o
 __pycache__/
 *.pyc
