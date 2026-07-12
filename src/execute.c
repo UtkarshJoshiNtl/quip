@@ -137,11 +137,7 @@ void execute_command(char *cmd) {
     {
         fflush(stdout);
         fflush(stderr);
-        int si = dup(STDIN_FILENO), so = dup(STDOUT_FILENO), se = dup(STDERR_FILENO);
         int rc = plugin_exec(args);
-        if (si >= 0) close(si);
-        if (so >= 0) close(so);
-        if (se >= 0) close(se);
         if (rc == 0) return;
     }
 
@@ -165,10 +161,18 @@ void execute_command(char *cmd) {
     } else {
         if (is_background) {
             int job_id = add_job(pid, cmd_copy);
-            printf(ANSI_ACCENT "[%d] %d\n" ANSI_RESET, job_id + 1, pid);
+            if (job_id == -1) {
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "too many jobs\n" ANSI_RESET);
+            } else {
+                printf(ANSI_ACCENT "[%d] %d\n" ANSI_RESET, job_id + 1, pid);
+            }
         } else {
             int status;
-            if (waitpid(pid, &status, 0) == -1) {
+            int ret;
+            do {
+                ret = waitpid(pid, &status, 0);
+            } while (ret == -1 && errno == EINTR);
+            if (ret == -1 && errno != EINTR) {
                 fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "waitpid failed: %s\n" ANSI_RESET, strerror(errno));
             }
         }
@@ -372,10 +376,15 @@ void execute_pipeline(char **commands) {
             builtin_func bf = find_builtin(cmd_args[0]);
             if (bf) {
                 int result = bf(cmd_args);
+                fflush(stdout);
+                fflush(stderr);
                 _exit(result == 1 ? 0 : 1);
             }
-            if (plugin_exec(cmd_args) == 0)
+            if (plugin_exec(cmd_args) == 0) {
+                fflush(stdout);
+                fflush(stderr);
                 _exit(0);
+            }
             execvp(cmd_args[0], cmd_args);
             fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "%s: command not found\n" ANSI_RESET, cmd_args[0]);
             _exit(EXIT_FAILURE);

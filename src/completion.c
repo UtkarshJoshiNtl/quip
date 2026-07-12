@@ -20,10 +20,11 @@ static int count_matches(const char *prefix, char **matches, int max_matches) {
 
     for (int i = 0; builtin_commands[i]; i++) {
         if (strncmp(builtin_commands[i], prefix, plen) == 0) {
-            if (matches && count < max_matches)
+            if (matches && count < max_matches) {
                 matches[count] = strdup(builtin_commands[i]);
-            if (matches && matches[count] == NULL)
-                return count;
+                if (matches[count] == NULL)
+                    return count;
+            }
             count++;
         }
     }
@@ -100,15 +101,16 @@ void handle_completion(char *buf, int *pos, int *len) {
         size_t prefix_len = strlen(prefix);
 
         if (match_len > prefix_len) {
+            int inserted = 0;
             for (size_t i = prefix_len; i < match_len && *len < MAX_LINE - 1; i++) {
                 memmove(buf + *pos + 1, buf + *pos, *len - *pos);
                 buf[*pos] = matches[0][i];
                 (*pos)++;
                 (*len)++;
                 buf[*len] = '\0';
+                inserted++;
             }
-            write(STDOUT_FILENO, buf + *pos - (match_len - prefix_len),
-                  match_len - prefix_len);
+            write(STDOUT_FILENO, buf + *pos - inserted, (size_t)inserted);
         }
 
         for (int i = 0; i < match_count; i++)
@@ -120,15 +122,16 @@ void handle_completion(char *buf, int *pos, int *len) {
             size_t common_len = strlen(common_prefix);
             size_t prefix_len = strlen(prefix);
 
+            int inserted = 0;
             for (size_t i = prefix_len; i < common_len && *len < MAX_LINE - 1; i++) {
                 memmove(buf + *pos + 1, buf + *pos, *len - *pos);
                 buf[*pos] = common_prefix[i];
                 (*pos)++;
                 (*len)++;
                 buf[*len] = '\0';
+                inserted++;
             }
-            write(STDOUT_FILENO, buf + *pos - (common_len - prefix_len),
-                  common_len - prefix_len);
+            write(STDOUT_FILENO, buf + *pos - inserted, (size_t)inserted);
         } else {
             write(STDOUT_FILENO, "\n", 1);
 

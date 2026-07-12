@@ -7,7 +7,8 @@ static volatile sig_atomic_t sigint_received = 0;
 static void signal_handler(int sig) {
     switch (sig) {
         case SIGINT:
-            write(STDOUT_FILENO, "^C\n", 3);
+            if (isatty(STDOUT_FILENO))
+                write(STDOUT_FILENO, "^C\n", 3);
             sigint_received = 1;
             break;
         case SIGTERM:

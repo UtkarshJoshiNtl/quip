@@ -48,7 +48,8 @@ void remove_job(int job_id) {
 
 void cleanup_jobs(void) {
     for (int i = 0; i < job_count; i++) {
-        if (waitpid(jobs[i].pid, NULL, WNOHANG) > 0) {
+        int ret = waitpid(jobs[i].pid, NULL, WNOHANG);
+        if (ret > 0 || (ret == -1 && errno == ECHILD)) {
             remove_job(i);
             i--;
         }

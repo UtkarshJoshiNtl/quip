@@ -15,6 +15,27 @@ static char config_path[512] = {0};
 
 static void ensure_dir(const char *path) {
     struct stat st;
+    if (stat(path, &st) == 0 || errno != ENOENT)
+        return;
+
+    char tmp[512];
+    size_t len = strlen(path);
+    if (len >= sizeof(tmp)) return;
+    memcpy(tmp, path, len + 1);
+
+    for (char *p = tmp + 1; *p; p++) {
+        if (*p != '/') continue;
+        *p = '\0';
+        if (stat(tmp, &st) == -1 && errno == ENOENT) {
+            if (mkdir(tmp, 0755) == -1) {
+                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "mkdir(%s): %s\n" ANSI_RESET, tmp, strerror(errno));
+                *p = '/';
+                return;
+            }
+        }
+        *p = '/';
+    }
+
     if (stat(path, &st) == -1 && errno == ENOENT) {
         if (mkdir(path, 0755) == -1) {
             fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "mkdir(%s): %s\n" ANSI_RESET, path, strerror(errno));

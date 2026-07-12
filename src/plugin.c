@@ -71,6 +71,8 @@ static char *plugin_recv(int fd, size_t *out_len) {
     size_t total = 0;
     while (total < msg_len) {
         n = read(fd, buf + total, msg_len - total);
+        if (n == -1 && errno == EINTR)
+            continue;
         if (n <= 0) {
             free(buf);
             return NULL;
@@ -344,7 +346,10 @@ int plugin_exec(char **argv) {
 
         if (code_start) {
             code_start += (code_start[12] == ' ') ? 13 : 12;
-            exit_code = atoi(code_start);
+            char *endptr;
+            long val = strtol(code_start, &endptr, 10);
+            if (endptr != code_start)
+                exit_code = (int)val;
         }
 
         if (exit_code == 127) {
