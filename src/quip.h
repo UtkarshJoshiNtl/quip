@@ -22,22 +22,12 @@
 #define ANSI_BOLD    "\033[1m"
 #define ANSI_RESET   "\033[0m"
 
-#define CONFIG_MAX_ENTRIES 32
-#define CONFIG_KEY_LEN     64
-#define CONFIG_VAL_LEN    256
-
 typedef int (*builtin_func)(char **argv);
 
 struct builtin {
     const char *name;
     builtin_func func;
 };
-
-void history_init(void);
-void history_cleanup(void);
-void history_push(const char *line);
-const char *history_get(int index);
-int history_size(void);
 
 void terminal_init(void);
 void terminal_cleanup(void);
@@ -56,23 +46,10 @@ void execute_pipeline(char **commands);
 int builtin_cd(char **argv);
 int builtin_pwd(char **argv);
 int builtin_help(char **argv);
-int builtin_history(char **argv);
 int builtin_exit(char **argv);
 int builtin_clear(char **argv);
 int builtin_echo(char **argv);
 int builtin_env(char **argv);
-
-void jobs_init(void);
-void cleanup_jobs(void);
-int add_job(pid_t pid, const char *command);
-void remove_job(int job_id);
-int builtin_jobs(char **argv);
-int builtin_fg(char **argv);
-int builtin_bg(char **argv);
-int is_background_command(const char *cmd);
-char *strip_background_ampersand(char *cmd);
-
-void handle_completion(char *buf, int *pos, int *len);
 
 void signals_init(void);
 void signals_cleanup(void);
@@ -80,20 +57,8 @@ void signal_exit_shell(void);
 int should_exit_shell(void);
 int was_sigint_received(void);
 
-void config_init(void);
-const char *config_get(const char *key);
-int config_get_int(const char *key, int default_val);
-const char *get_data_path(void);
-const char *get_config_path(void);
-
-void plugin_init(void);
-int plugin_available(void);
-int plugin_exec(char **argv);
-void plugin_cleanup(void);
-
 char *get_command_line(void);
 void print_prompt(void);
-void print_continuation_prompt(void);
 void handle_redirection(char **argv);
 
 #endif

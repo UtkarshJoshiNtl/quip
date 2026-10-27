@@ -1,8 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -O2 -std=c17
-SRC = src/main.c src/config.c src/history.c src/terminal.c src/prompt.c \
-      src/builtins.c src/execute.c src/signals.c src/jobs.c src/completion.c \
-      src/plugin.c
+SRC = src/main.c src/terminal.c src/prompt.c \
+      src/builtins.c src/execute.c src/signals.c
 TARGET = quip
 
 all: $(TARGET)

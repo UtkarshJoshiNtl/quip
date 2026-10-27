@@ -14,6 +14,8 @@ static void signal_handler(int sig) {
         case SIGTERM:
             should_exit = 1;
             break;
+        default:
+            break;
     }
 }
 
@@ -24,14 +26,10 @@ void signals_init(void) {
     sigemptyset(&sa.sa_mask);
 
     sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGTERM, &sa, NULL) == -1) {
-        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "sigaction SIGTERM failed: %s\n" ANSI_RESET, strerror(errno));
-    }
+    sigaction(SIGTERM, &sa, NULL);
 
     sa.sa_flags = 0;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "sigaction SIGINT failed: %s\n" ANSI_RESET, strerror(errno));
-    }
+    sigaction(SIGINT, &sa, NULL);
 
     signal(SIGQUIT, SIG_IGN);
     signal(SIGCHLD, SIG_DFL);

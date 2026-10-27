@@ -105,14 +105,9 @@ void execute_command(char *cmd) {
     if (!cmd || !*cmd) return;
 
     char *args[MAX_ARGS];
-
-    int is_background = is_background_command(cmd);
     char cmd_copy[MAX_LINE];
     strncpy(cmd_copy, cmd, MAX_LINE - 1);
     cmd_copy[MAX_LINE - 1] = '\0';
-
-    if (is_background)
-        strip_background_ampersand(cmd_copy);
 
     int argc = parse_command_line(cmd_copy, args);
     if (argc == 0 || args[0] == NULL) return;
@@ -125,20 +120,13 @@ void execute_command(char *cmd) {
         if (si >= 0 && so >= 0 && se >= 0)
             handle_redirection(args);
         int result = bf(args);
-        if (so >= 0)  { fflush(stdout);  dup2(so, STDOUT_FILENO); close(so); }
-        if (se >= 0)  { fflush(stderr);  dup2(se, STDERR_FILENO); close(se); }
-        if (si >= 0)  { dup2(si, STDIN_FILENO);  close(si); }
+        if (so >= 0) { fflush(stdout); dup2(so, STDOUT_FILENO); close(so); }
+        if (se >= 0) { fflush(stderr); dup2(se, STDERR_FILENO); close(se); }
+        if (si >= 0) { dup2(si, STDIN_FILENO); close(si); }
         if (result == -1) {
             signal_exit_shell();
         }
         return;
-    }
-
-    {
-        fflush(stdout);
-        fflush(stderr);
-        int rc = plugin_exec(args);
-        if (rc == 0) return;
     }
 
     pid_t pid = fork();
@@ -159,45 +147,15 @@ void execute_command(char *cmd) {
         fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "%s: command not found\n" ANSI_RESET, args[0]);
         _exit(EXIT_FAILURE);
     } else {
-        if (is_background) {
-            int job_id = add_job(pid, cmd_copy);
-            if (job_id == -1) {
-                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "too many jobs\n" ANSI_RESET);
-            } else {
-                printf(ANSI_ACCENT "[%d] %d\n" ANSI_RESET, job_id + 1, pid);
-            }
-        } else {
-            int status;
-            int ret;
-            do {
-                ret = waitpid(pid, &status, 0);
-            } while (ret == -1 && errno == EINTR);
-            if (ret == -1 && errno != EINTR) {
-                fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "waitpid failed: %s\n" ANSI_RESET, strerror(errno));
-            }
+        int status;
+        int ret;
+        do {
+            ret = waitpid(pid, &status, 0);
+        } while (ret == -1 && errno == EINTR);
+        if (ret == -1 && errno != EINTR) {
+            fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "waitpid failed: %s\n" ANSI_RESET, strerror(errno));
         }
     }
-}
-
-static char *strchr_quote_aware(const char *s, int ch) {
-    if (!s) return NULL;
-    while (*s) {
-        if (*s == '\\' && *(s+1)) {
-            s += 2;
-        } else if (*s == '"') {
-            s++;
-            while (*s && *s != '"') {
-                if (*s == '\\' && *(s+1)) s++;
-                s++;
-            }
-            if (*s) s++;
-        } else if (*s == ch) {
-            return (char *)s;
-        } else {
-            s++;
-        }
-    }
-    return NULL;
 }
 
 void execute_line(char *line) {
@@ -209,34 +167,28 @@ void execute_line(char *line) {
         return;
     }
 
+    /* TODO: support semicolons (;) */
+    /* TODO: support multiline input (\ and unmatched quotes) */
+
     char *p = line_copy;
-    while (p && *p) {
-        while (*p == ' ' || *p == '\t') p++;
-        if (*p == '\0') break;
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == '\0') {
+        free(line_copy);
+        return;
+    }
 
-        char *sc = strchr_quote_aware(p, ';');
-        if (sc) *sc = '\0';
-
-        char *trimmed = p;
-        while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
-
-        if (*trimmed) {
-            if (strchr_quote_aware(trimmed, '|')) {
-                char *commands[MAX_ARGS];
-                int cmd_count = parse_pipeline(trimmed, commands);
-                if (cmd_count > 1) {
-                    execute_pipeline(commands);
-                } else if (cmd_count == 1) {
-                    execute_command(commands[0]);
-                }
-                for (int i = 0; i < cmd_count; i++)
-                    free(commands[i]);
-            } else {
-                execute_command(trimmed);
-            }
+    if (strchr(p, '|')) {
+        char *commands[MAX_ARGS];
+        int cmd_count = parse_pipeline(p, commands);
+        if (cmd_count > 1) {
+            execute_pipeline(commands);
+        } else if (cmd_count == 1) {
+            execute_command(commands[0]);
         }
-
-        p = sc ? sc + 1 : NULL;
+        for (int i = 0; i < cmd_count; i++)
+            free(commands[i]);
+    } else {
+        execute_command(p);
     }
 
     free(line_copy);
@@ -293,13 +245,17 @@ int parse_pipeline(char *line, char **commands) {
     return count;
 }
 
-static void cleanup_pipes(int nfds, pid_t *pids, int rfd, int wfd, int infd) {
+static void cleanup_pipes(int count_forked, pid_t *pids, int rfd, int wfd, int infd) {
     if (rfd >= 0 && rfd != STDIN_FILENO) close(rfd);
     if (wfd >= 0 && wfd != STDOUT_FILENO) close(wfd);
     if (infd >= 0 && infd != STDIN_FILENO && infd != STDOUT_FILENO) close(infd);
-
-    for (int i = 0; i < nfds; i++) {
-        if (pids[i] > 0) waitpid(pids[i], NULL, WNOHANG);
+    for (int i = 0; i < count_forked; i++) {
+        if (pids[i] > 0) {
+            int ret;
+            do {
+                ret = waitpid(pids[i], NULL, WNOHANG);
+            } while (ret == -1 && errno == EINTR);
+        }
     }
 }
 
@@ -355,7 +311,7 @@ void execute_pipeline(char **commands) {
             if (i > 0) {
                 if (dup2(in_fd, STDIN_FILENO) == -1)
                     _exit(127);
-                close(in_fd);
+                if (in_fd != STDIN_FILENO) close(in_fd);
             }
 
             if (i < num_commands - 1) {
@@ -380,12 +336,7 @@ void execute_pipeline(char **commands) {
                 fflush(stderr);
                 _exit(result == 1 ? 0 : 1);
             }
-            if (plugin_exec(cmd_args) == 0) {
-                fflush(stdout);
-                fflush(stderr);
-                _exit(0);
-            }
-            execvp(cmd_args[0], cmd_args);
+                execvp(cmd_args[0], cmd_args);
             fprintf(stderr, ANSI_DIM "quip: " ANSI_RED "%s: command not found\n" ANSI_RESET, cmd_args[0]);
             _exit(EXIT_FAILURE);
         } else {
@@ -403,7 +354,10 @@ void execute_pipeline(char **commands) {
 
     int status;
     for (int i = 0; i < num_forked; i++) {
-        waitpid(pids[i], &status, 0);
+        int ret;
+        do {
+            ret = waitpid(pids[i], &status, 0);
+        } while (ret == -1 && errno == EINTR);
     }
 
     if (in_fd >= 0 && in_fd != STDIN_FILENO) {
